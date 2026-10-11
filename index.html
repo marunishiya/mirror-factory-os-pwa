@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0b1021" />
+<title>MIRROR FACTORY OS — v1.0 PWA PRIVATE TEST</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="application-name" content="MIRROR FACTORY OS">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{--bg:#090e1d;--panel:#111a30;--panel2:#18233d;--ink:#eef2fd;--muted:#a2afcc;--line:#2a3858;--indigo:#a8acff;--teal:#5ae3c1;--orange:#ffcd77;--danger:#ff8b9d;--shadow:0 20px 65px rgba(0,0,0,.27)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 70% 28% at 52% -5%,#28325a 0%,transparent 80%),var(--bg);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}a{color:var(--indigo)}.wrap{max-width:1080px;margin:0 auto;padding:0 22px}.header{border-bottom:1px solid rgba(255,255,255,.07);padding:23px 0 18px}.headrow,.flex{display:flex;align-items:center;gap:12px}.headrow{justify-content:space-between}.brand-icon{height:43px;width:43px;display:grid;place-items:center;background:linear-gradient(125deg,#5b66c7,#273963);border-radius:14px;box-shadow:0 8px 22px #515de42d;font-size:21px}.brand{font-weight:850;letter-spacing:.065em;font-size:16px;line-height:1.1}.subbrand{font-size:11px;color:var(--muted);letter-spacing:.075em;margin-top:7px}.pill{font-size:11px;border:1px solid var(--line);border-radius:100px;padding:4px 9px;white-space:nowrap;color:#c6d4f0}.pill.good{color:var(--teal);border-color:#287668}.pill.warn{color:var(--orange);border-color:#785f36}.pill.bad{color:var(--danger);border-color:#844252}.intro{padding:35px 0 18px}.eyebrow{color:var(--teal);font-size:11px;font-weight:800;letter-spacing:.2em}.hero{font-size:clamp(27px,5vw,43px);font-weight:850;line-height:1.27;letter-spacing:-.045em;margin:10px 0 10px}.hero strong{color:#bfc3ff}.lede{max-width:760px;color:var(--muted);font-size:14px;margin:0}.nav{display:flex;overflow-x:auto;gap:8px;scrollbar-width:none;position:sticky;top:0;z-index:9;background:#0b1121f0;padding:12px 0 13px;backdrop-filter:blur(16px);border-bottom:1px solid #ffffff0b}.nav::-webkit-scrollbar{display:none}.nav button{flex-shrink:0;color:var(--muted);background:transparent;border:1px solid transparent;border-radius:12px;padding:10px 15px;font-size:13px;font-weight:650}.nav button.active{background:#283454;border-color:#47537c;color:#f8faff}.main{padding:22px 0 56px}.hidden{display:none!important}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.grid.two{grid-template-columns:repeat(2,1fr)}.panel{background:linear-gradient(145deg,var(--panel),#0f182c);border:1px solid var(--line);border-radius:19px;padding:20px;box-shadow:var(--shadow)}.panel.softer{background:var(--panel2)}.metric{font-size:29px;font-weight:850;line-height:1.1;letter-spacing:-.035em;margin:9px 0}.tiny{font-size:11px;color:var(--muted)}.label{font-size:12px;color:#c8d3ed;font-weight:680}.h2{font-size:21px;line-height:1.3;font-weight:800;margin:0 0 9px}.h3{font-size:16px;font-weight:750;margin:0 0 9px}.muted{color:var(--muted)}.desc{font-size:13px;color:var(--muted);margin:0 0 17px}.section{margin-top:28px}.section:first-child{margin-top:0}.between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.callout{border-left:3px solid #a8acff;background:#222a454f;padding:13px 15px;font-size:13px;color:#dbe5ff;border-radius:0 12px 12px 0}.callout.warn{border-left-color:var(--orange)}.callout.good{border-left-color:var(--teal)}.btn{background:#c1c5ff;color:#0e1640;border:1px solid #c1c5ff;border-radius:11px;padding:11px 16px;font-size:13px;font-weight:800;min-height:43px}.btn.secondary{background:var(--panel2);color:#eef3ff;border:1px solid #394767}.btn.danger{background:#392231;color:#ffb7c2;border-color:#805060}.btn.small{padding:6px 11px;min-height:33px;font-size:12px}.rowbtn{display:flex;gap:9px;flex-wrap:wrap}.field{display:block;margin-top:13px;font-size:12px;color:#cbd5f2;font-weight:750}.input,.text-area,.select{display:block;width:100%;background:#0a1327;color:#f2f5ff;border:1px solid #354564;border-radius:11px;outline:none;padding:12px;margin-top:7px;min-width:0;font-size:13px}.input:focus,.text-area:focus,.select:focus{border-color:#999ffb;box-shadow:0 0 0 3px #777ded24}.text-area{min-height:120px;resize:vertical;line-height:1.8}.text-area.code{font:12px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;min-height:300px}.card-title{margin:0;font-size:17px;font-weight:770}.stat-ok{color:var(--teal)}.stat-warn{color:var(--orange)}.stat-bad{color:var(--danger)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}.asset{width:100%;height:180px;border:1px dashed #485879;border-radius:12px;display:grid;place-items:center;background:#0a1327;overflow:hidden;color:var(--muted);font-size:12px;text-align:center;padding:9px}.asset img{height:100%;width:100%;object-fit:contain}.kicker{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--teal)}.checkline{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:9px 0;color:#e3ebfa}.checkline input{margin-top:5px;accent-color:#b5b9ff;min-width:17px;min-height:17px}.step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}.step:last-child{border-bottom:0}.number{width:32px;height:32px;border-radius:9px;background:#303a60;color:#d3d7ff;display:grid;place-items:center;font-weight:850;flex-shrink:0}.step p{margin:0;font-size:12px;color:var(--muted)}.lines{background:#0b1326;border:1px solid var(--line);border-radius:12px;padding:13px 14px;line-height:1.9;font-size:13px}.lines div{border-bottom:1px solid #ffffff12;padding:4px 0}.lines div:last-child{border-bottom:none}.line-num{font-size:10px;color:#7e8aab;display:inline-block;width:28px}.foot{padding:25px 0;color:#8796b6;text-align:center;border-top:1px solid var(--line);font-size:11px}.status-bullet{display:inline-block;width:8px;height:8px;border-radius:100%;background:var(--orange);margin-right:8px}.status-bullet.ok{background:var(--teal)}.list-clean{margin:0;padding-left:18px;font-size:13px;color:#d5def3}.list-clean li{margin:9px 0}.progress{height:7px;border-radius:10px;background:#283452;overflow:hidden}.progress span{height:100%;background:linear-gradient(90deg,#7ca6ff,#6be8c8);display:block;transition:width .2s}.divider{border:0;border-top:1px solid var(--line);margin:20px 0}.toast{position:fixed;z-index:99;bottom:24px;left:50%;transform:translateX(-50%);background:#c8ffe9;color:#0d3b37;padding:10px 18px;border-radius:13px;font-weight:700;box-shadow:0 15px 40px #0007;max-width:90vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}.no-spacer{margin:0}.note{font-size:11px;color:#9aa9c7}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tag{font-size:11px;background:#252f4f;border:1px solid #445071;border-radius:7px;color:#c7d1ec;padding:3px 8px;display:inline-block;margin:0 6px 6px 0}.ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inline{display:inline}.pageSelector{min-width:250px}.image-upload{max-width:100%;font-size:12px;color:var(--muted);margin:9px 0}.wide{grid-column:1/-1}.danger-text{color:var(--danger)}.good-text{color:var(--teal)}.mono{font-family:ui-monospace,Consolas,monospace}#tab-vault .panel{min-width:0}kbd{background:#273252;padding:2px 5px;border-radius:5px}
+/* v0.9 typography plan & visual gate */
+.type-card{border:1px solid var(--line);border-radius:13px;background:#101c35;padding:13px}
+.type-card label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}
+.type-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}
+.type-demo{display:block;font-size:16px;line-height:1.4;letter-spacing:.05em;background:#f9f8fb;color:#202336;border-radius:6px;padding:8px;margin-top:7px;writing-mode:vertical-rl;max-height:110px;overflow:auto}
+@media(max-width:720px){.type-cards{grid-template-columns:1fr}.wrap{padding:0 15px}.grid,.grid.two{grid-template-columns:1fr}.hero{font-size:31px}.panel{padding:16px;border-radius:15px}.formgrid{grid-template-columns:1fr}.nav button{padding:9px 12px}.pageSelector{width:100%}.asset{height:205px}.wide{grid-column:auto}.intro{padding-top:24px}}
+
+/* v0.4 production and growth modules */
+.mini-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.mini-metric{background:#182541;border:1px solid #334465;padding:14px;border-radius:14px}.mini-metric b{display:block;font-size:22px;line-height:1.35;letter-spacing:-.02em}.scrolltable{overflow:auto;border:1px solid var(--line);border-radius:12px}.scrolltable table{width:100%;border-collapse:collapse;min-width:510px}.scrolltable th,.scrolltable td{text-align:left;padding:10px;border-bottom:1px solid #2b3854;font-size:12px;vertical-align:top}.scrolltable th{color:#a8b4d5;background:#1b2842}.scrolltable tr:last-child td{border-bottom:0}.channel-chip{display:inline-flex;background:#29375a;border:1px solid #485980;border-radius:20px;padding:2px 9px;margin:2px;font-size:11px}.barline{height:9px;background:#263150;border-radius:30px;overflow:hidden}.barline i{display:block;height:100%;background:#9fa9ff;border-radius:30px}.record{border-bottom:1px solid #2c3954;padding:12px 0}.record:last-child{border-bottom:none}.record .between{align-items:flex-start}.muted-strong{color:#d8e2fc}.form-checks{display:flex;flex-wrap:wrap;gap:12px}.form-checks label{white-space:nowrap}.status-chip{font-size:10px;border:1px solid #596388;color:#cdd7f1;padding:3px 8px;border-radius:22px}.status-chip.complete{color:var(--teal);border-color:#2d7c69}.status-chip.failed{color:var(--danger);border-color:#9b5864}.status-chip.scheduled{color:var(--orange);border-color:#96723f}.helper{color:#a5b1d0;font-size:11px;margin:8px 0 0}.empty{border:1px dashed #536282;border-radius:12px;color:#aab8d8;padding:24px;text-align:center}.warning-label{font-weight:800;color:var(--orange)}.mono-mini{font-size:11px;font-family:ui-monospace,SFMono-Regular,monospace}.focus-ring{outline:2px solid #94a8ff;outline-offset:2px}.quick-row{display:flex;gap:7px;flex-wrap:wrap}.quick-row button{font-size:11px}.status-icon{width:22px;flex-shrink:0;text-align:center}.tap{color:#d2ddff;font-weight:650;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+@media(max-width:720px){.mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mini-metric b{font-size:20px}.scrolltable table{min-width:560px}}
+
+
+/* v0.6: explicit spatial/storyboard visual verification */
+.cont-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;direction:rtl}
+.cont-card{direction:ltr;min-width:0;border-radius:15px;background:#101c34;border:1px solid #344564;padding:14px}
+.cont-card h3{margin:0;color:#eef2fd;font-size:14px}
+.cont-card .readorder{font-size:11px;color:#91a4cd}
+.cont-line{font-size:12px;margin-top:7px;border-radius:7px;background:#1b2b4b;padding:7px;line-height:1.6;overflow-wrap:anywhere}
+.cont-warning{font-size:11px;margin:8px 0;color:#ffcc83}
+.cont-card .checkline{padding:6px 0;font-size:12px}
+.cont-card .select{padding:8px;font-size:12px}
+.cont-card .text-area{min-height:60px}
+.cont-card.invalid{border-color:#91485b}
+.cont-legend{font-size:12px;color:#afbddc;margin:0 0 12px}
+.cont-progress{display:block;width:100%;background:#2d3e60;border-radius:5px;height:7px;overflow:hidden;margin:10px 0}
+.cont-progress i{height:100%;display:block;background:#67d3bd;max-width:100%}
+@media(max-width:720px){.cont-grid{gap:8px}.cont-card{padding:9px}.cont-card h3{font-size:12px}.cont-line{font-size:11px}.cont-card .checkline{font-size:11px}}
+
+/* v0.7: position-based multi-balloon order detection (manual point placement) */
+.bubble-card{border:1px solid var(--line);border-radius:16px;padding:16px;background:#111d37;margin-top:15px}
+.bubble-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.bubble-canvas{display:block;width:100%;max-width:600px;height:auto;border:1px solid #465578;border-radius:12px;touch-action:manipulation;cursor:crosshair;margin:9px 0 13px;background:#080e1d}
+.bubble-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px solid #ffffff17;padding:10px 0}
+.bubble-row .text-part{min-width:160px;flex:1;overflow-wrap:anywhere;font-size:13px}
+.bubble-row .controls{display:flex;align-items:center;gap:7px}
+.bubble-row button.selected{background:#a8acff;color:#121935}
+.bubble-state{font-size:11px;color:var(--muted);margin-top:7px}
+.bubble-instruction{color:var(--orange);font-weight:700;font-size:12px}
+@media(max-width:720px){.bubble-card{padding:12px}.bubble-row .text-part{flex-basis:100%}}
+</style>
+</head>
+<body>
+<header class="header"><div class="wrap headrow"><div class="flex"><div class="brand-icon">◈</div><div><div class="brand">MIRROR FACTORY OS</div><div class="subbrand">PROJECT MIRROR / CREATION SYSTEM</div></div></div><span class="pill">v1.0 · PWA PRIVATE TEST</span></div></header>
+<div class="wrap intro"><div class="eyebrow">CREATE · VERIFY · IMPROVE</div><h1 class="hero">一歩ずつ確実に。<br><strong>制作するほど進化する。</strong></h1><p class="lede">正式MASTER・原稿・QA・制作時間・投稿計画・売上を一元管理。実績に基づき、次の作品を改善します。</p></div>
+<div class="wrap"><nav class="nav" aria-label="アプリの機能"><button class="active" data-tab="home">⌂ ホーム</button><button data-tab="vault">◈ CANON保管庫</button><button data-tab="source">▤ 原稿保管庫</button><button data-tab="qa">✓ QA確認</button><button data-tab="continuity">◫ 連続性LOCK</button><button data-tab="bubble">▤ 吹き出し順LOCK</button><button data-tab="type">Aa 文字サイズLOCK</button><button data-tab="evolve">↻ 改善・検証ラボ</button><button data-tab="work">◷ 制作ログ</button><button data-tab="post">▣ 投稿管理</button><button data-tab="growth">↗ 成長・売上</button><button data-tab="data">⇪ バックアップ</button></nav><main class="main">
+<section id="tab-home"><div class="callout good" style="margin-bottom:16px">作業スペース：<strong id="project-name-display">PROJECT MIRROR</strong>　／　<strong>安全性と操作性を検証するベータ版</strong>（販売開始前）</div>
+<div class="grid" id="overview-stats"></div>
+<div class="section panel" id="daily-panel"><div class="between"><div><div class="kicker">TODAY'S WORKFLOW</div><h2 class="h2" style="margin-top:8px">今日やること</h2></div><span class="pill">個人運用版</span></div><div id="today-actions"></div><div class="callout" id="safety-summary" style="margin-top:15px">原稿の状態を確認中</div><p class="note" id="backup-indicator" style="margin-top:12px">バックアップ：記録なし</p></div>
+<div class="section panel" id="pwa-setup-panel">
+  <div class="between"><div><div class="kicker">REBOOT SAFE · PWA PILOT</div><h2 class="h2" style="margin:7px 0">起動・保存の安全確認</h2></div><span class="pill warn" id="pwa-status">判定中</span></div>
+  <p class="desc">固定HTTPSアドレスから開くと、再起動後も同じURLへアクセスできます。ただしブラウザのデータ保存は保証されません。移行時は必ずJSONをバックアップ・復元してください。</p>
+  <div class="lines"><div><b>起動方式：</b><span id="pwa-launch-mode">確認中</span></div><div><b>オフライン準備：</b><span id="pwa-offline">確認中</span></div><div><b>保存領域の保護：</b><span id="pwa-persist">確認中</span></div><div><b>通信：</b><span id="pwa-online">確認中</span></div></div>
+  <div class="rowbtn" style="margin-top:14px"><button class="btn secondary" id="pwa-persist-btn">保存領域の保護をリクエスト</button><button class="btn secondary" id="pwa-install-btn">ホーム画面に追加する方法</button><button class="btn secondary" data-go="data">JSONバックアップへ →</button></div>
+  <p class="note" id="pwa-help">この機能はHTTPS公開後に本領を発揮します。現段階では公開前の試験用です。サービスワーカーはコードをキャッシュし、画像やJSONバックアップはアップロードしません。</p>
+</div>
+<div class="grid two section"><div class="panel"><div class="kicker">NEXT ACTION</div><h2 class="h2" style="margin-top:8px">最初に正式MASTERを登録</h2><p class="desc">画像未確認のキャラクターを想像で補わないため、ユーザー承認済みの正式MASTERを登録します。</p><button class="btn" data-go="vault">CANON保管庫を開く →</button></div><div class="panel"><div class="kicker">CURRENT TARGET</div><h2 class="h2" style="margin-top:8px">制作中のページ</h2><p class="desc">バックアップ復元後に登録済み原稿を表示します。未登録の設定を推測しません。</p><button class="btn secondary" data-go="source">確定原稿を確認 →</button></div></div>
+<div class="section panel"><div class="between"><h2 class="h2">制作ゲート</h2><span class="pill warn" id="home-gate">未検証</span></div><div id="home-gates"></div></div>
+<div class="section callout warn">この版はHTTPS経由で使う個人向けPWA試験版です。4-LOCKは構造のプログラム照合＋人間の目視確認です。自動顔一致・OCR・SNSの自動投稿・外部SNS分析の自動取り込み・クラウド同期は未実装です。投稿状況・数値はユーザーの手動登録です。</div>
+</section>
+<section class="hidden" id="tab-vault"><div class="between"><div><h2 class="h2">CANON VAULT</h2><p class="desc">正式MASTERのみを登録。添付なしの見た目はすべてUNKNOWNです。</p></div><span class="pill warn" id="vault-counter">0 / 4 CONFIRMED</span></div><div class="grid two" id="char-grid"></div>
+<div class="section panel"><h3 class="h3">＋新しいキャラクターを登録</h3><p class="desc">PROJECT MIRRORの新キャラクターを登録します。正式MASTER登録と承認は別途必要です。</p><label class="field">キャラクター名<input class="input" id="char-new-name" maxlength="70" placeholder="例：佐藤さくら"></label><label class="field">人物設定（文章のみ、外見は正式MASTER参照）<textarea class="text-area" id="char-new-canon" maxlength="2000" placeholder="年齢・役割・作品上の特性など"></textarea></label><button class="btn" id="char-create">キャラクターを追加</button></div><div class="section callout">画像登録後も、自動で「本人確認済み」にはしません。ユーザー自身が正式MASTERであることを明示的に承認したときのみ、制作前の参照ゲートを通過できます。外見の自動判定は未実装です。</div></section>
+<section class="hidden" id="tab-source"><div class="between"><div><h2 class="h2">SOURCE LOCK 保管庫</h2><p class="desc">確定セリフ・話者・ストーリー制約を保管します。画像生成用プロンプトは作成しません。</p></div><select class="select pageSelector" id="source-page" aria-label="対象ページ"></select></div><div class="grid two"><div class="panel"><div class="card-head"><h3 class="h3">確定原稿（読み取り専用）</h3><span class="pill good">TEXT LOCK</span></div><div class="lines" id="reference-lines"></div><p class="note">ここでの行順は進行順です。1行が必ず1コマに対応するとは限りません。</p></div><div class="panel"><div class="card-head"><h3 class="h3">MASTER参照状況</h3><span class="pill warn" id="source-gate-badge">未確認</span></div><div id="source-preflight"></div><hr class="divider"/><h3 class="h3">確定済みの物語制約</h3><div class="lines" id="source-constraints"></div><label class="field" for="scene-notes">制作・修正メモ（確定原稿とは別）</label><textarea id="scene-notes" class="text-area" placeholder="検証で気づいたこと、演出上の注意。確定セリフは変更されません"></textarea><button id="save-scene-notes" class="btn secondary" style="margin-top:12px">制作メモを保存</button></div></div><div class="section panel"><details><summary style="cursor:pointer;font-weight:750">＋新規ページを登録する</summary><div class="formgrid" style="margin-top:15px"><label class="field">章<input class="input" id="new-chapter" placeholder="第4章"></label><label class="field">ページ番号<input class="input" id="new-pageno" placeholder="P09"></label><label class="field wide">タイトル<input class="input" id="new-title" placeholder="タイトル"></label></div><label class="field">登場キャラクター</label><div id="new-char-select"></div><label class="field">確定したセリフ（1行につき「話者｜セリフ」）</label><textarea class="text-area" id="new-lines" placeholder="人物A｜こんにちは。&#10;人物B｜こんにちは。"></textarea><label class="field">必須ストーリー制約</label><textarea id="new-constraints" class="text-area" placeholder="このページの役割と禁止事項を明記"></textarea><button class="btn" id="create-page" style="margin-top:15px">原稿を登録してLOCK</button><p class="note">確定原稿の無断上書きを防ぐため、訂正時は新たなページ版として登録してください。</p></details></div></section>
+<section class="hidden" id="tab-qa"><div class="between"><div><h2 class="h2">MANGA QA GATE</h2><p class="desc">自動の文字列照合と、ユーザーによる視覚チェックを明確に分けます。</p></div><select class="select pageSelector" id="qa-page" aria-label="QA対象ページ"></select></div><div class="grid two"><div class="panel"><h3 class="h3">原稿セリフと厳密照合</h3><p class="desc">生成した画像の文字を、自分で転記するか別のOCRで抽出し、話者ごとに「話者｜セリフ」の形式で貼ってください。文字列だけをチェックします。</p><label class="field" for="qa-transcript">検査対象の文字列</label><textarea class="text-area" id="qa-transcript" placeholder="人物A｜確認しました。&#10;画面｜サンプル結果"></textarea><button class="btn secondary" id="check-text" style="margin-top:12px">文字列を厳密照合する</button><div id="qa-text-result" class="callout warn" style="margin-top:14px">未検証</div></div><div class="panel"><h3 class="h3">生成ページの視覚的証拠</h3><p class="desc">対象の生成ページ画像を登録してください。アップロードしただけではPASSになりません。</p><div id="qa-image" class="asset">生成ページ画像が未登録です</div><input class="image-upload" type="file" id="qa-file" accept="image/*"><div class="note" id="qa-file-name"></div></div></div><div class="section panel"><div class="between"><h3 class="h3">人間による最終確認</h3><span class="pill warn" id="qa-final-status">UNVERIFIED</span></div><div id="qa-checks"></div><div class="callout warn" id="qa-summary">正式MASTERと完成画像を確認して、各項目をチェックしてください。</div><button class="btn secondary" id="qa-save" style="margin-top:15px">確認内容を保存する</button></div><div class="section panel"><h3 class="h3">修正・改善履歴</h3><p class="desc">気づいた問題と修正方針を時刻付きで追記。履歴は原稿やQA判定と区別して保管します。</p><label class="field" for="qa-issue">不具合・改善点</label><textarea class="text-area" id="qa-issue" placeholder="例：吹き出しが話者と不一致。話者LOCKを再確認する"></textarea><button class="btn secondary" id="add-issue" style="margin-top:12px">改善履歴に追加</button><div id="qa-issue-list" class="section"></div></div>
+</section>
+
+
+<section class="hidden" id="tab-continuity">
+ <div class="between"><div><h2 class="h2">4-LOCK CONTINUITY GATE</h2><p class="desc">コマ順・話者・吹き出しの尻尾・人物配置をページごとに管理。生成画像と見比べ、各コマを確認します。</p></div><select class="select pageSelector" id="continuity-page" aria-label="連続性確認対象ページ"></select></div>
+ <div class="callout warn" style="margin-bottom:16px">画像の内容は自動で判定しません。構造はプログラムで照合し、構図・尻尾・座席は登録画像を目視して判定してください。確認前のチェックや推測によるPASSは禁止です。</div>
+ <div class="panel"><div class="between"><h3 class="h3">人物配置・座席LOCK</h3><span id="cont-status" class="pill warn">UNVERIFIED</span></div><div id="cont-settings"></div><p id="cont-struct-result" class="callout warn"></p><div class="rowbtn" style="margin-top:12px"><button id="cont-reset" class="btn secondary small">P08の設計図を読み直す</button><button id="cont-open-qa" class="btn secondary small" data-go="qa">生成ページ画像をQAに登録 →</button><button class="btn secondary small" data-go="bubble">コマ内の吹き出し順を検査 →</button></div></div>
+ <div class="section"><div class="between"><h3 class="h3">コマ別チェック（右から左・上から下）</h3><span class="pill" id="cont-count">0 / 6</span></div><p class="cont-legend">各コマのセリフを確認し、尻尾の対象者・人物の座席・画面上のコマ位置を登録画像と照らし合わせます。</p><div id="cont-panels" class="cont-grid"></div></div>
+ <div class="section panel"><h3 class="h3">検証結果</h3><div id="cont-summary" class="callout warn">未検証</div><p class="note" style="margin:12px 0 0">各チェックは「画像を人間が見て確認した」という記録であり、AI画像鑑定ではありません。原稿・QA・バックアップ機能は従来どおり使用できます。</p></div>
+</section>
+
+<section class="hidden" id="tab-bubble">
+ <div class="between"><div><h2 class="h2">BUBBLE ORDER LOCK</h2><p class="desc">コマ内の吹き出しを読む順番を、確定原稿と照合します。まず画像上の吹き出し中央を指定します。</p></div><select class="select pageSelector" id="bubble-page" aria-label="吹き出し順の確認対象ページ"></select></div>
+ <div class="callout warn" style="margin-bottom:16px">画像からの吹き出し自動検出ではありません。人が吹き出しの中心を指定し、その座標から右→左・上→下の簡易ルールで順序を推定します。特殊な構図では誤判定があり得ます。位置指定だけで尻尾の正しさは保証しません。</div>
+ <div class="panel"><div class="between"><h3 class="h3">検査結果</h3><span class="pill warn" id="bubble-badge">UNVERIFIED</span></div><p id="bubble-summary" class="callout warn">吹き出し位置を登録してください</p><div class="rowbtn"><button class="btn secondary small" data-go="qa">画像の登録へ →</button><button class="btn secondary small" data-go="continuity">連続性LOCKへ →</button></div></div>
+ <div id="bubble-panels" class="section"></div>
+</section>
+
+<section class="hidden" id="tab-type">
+ <div class="between"><div><h2 class="h2">TEXT SIZE & BALLOON ORDER LOCK v1.0</h2><p class="desc">全コマ・全吹き出しの文字サイズを統一する制作設定と、完成画像の目視確認を分けて記録します。</p></div><select class="select pageSelector" id="type-page" aria-label="文字サイズの対象ページ"></select></div>
+ <div class="callout warn">この画面は<strong>制作時の文字サイズ設定</strong>を比較します。登録漫画から文字を自動認識・測定するものではありません。<strong>設定値が揃っていても画像を見ていなければ最終PASSになりません。</strong>作品の確定セリフは変更しません。</div>
+ <div class="section panel"><div class="between"><h3 class="h3">セリフ文字の統一ルール</h3><span id="type-status" class="pill warn">UNVERIFIED</span></div>
+ <p class="desc">吹き出し内のセリフに共通の基準サイズを指定します。画面UIの強調テキスト、章見出し、コマ番号は対象外。文字が入りきらない場合は吹き出し・改行・構図を調整し、原稿は変えません。</p>
+ <div class="formgrid"><label class="field">ページ共通の基準比率（％）<input class="input" type="number" id="type-base" min="70" max="160" step="1" value="100"/></label><div style="display:flex;align-items:end"><button class="btn secondary" id="type-apply">全コマへ同じサイズを一括設定</button></div></div>
+ <p class="note">100％＝このページで定義する標準サイズ。比率は実画像の測定値（px）ではありません。</p>
+ <div id="type-panels" class="type-cards"></div>
+ <div id="type-summary" class="callout warn" style="margin-top:15px">設定を確認してください</div>
+ </div>
+ <div class="section panel"><h3 class="h3">完成画像の最終チェック</h3><p class="desc">QA確認タブの「全コマの文字サイズが統一されている」「コマ内の吹き出しが原稿の発言順に読める」を実画像と照らし、確認した場合だけチェックします。</p><div class="rowbtn"><button class="btn secondary" data-go="qa">QA確認へ →</button><button class="btn secondary" data-go="bubble">吹き出し順LOCKへ →</button></div></div>
+</section>
+
+<section class="hidden" id="tab-evolve">
+ <div class="between"><div><h2 class="h2">IMPROVEMENT & REGRESSION LAB</h2><p class="desc">状態管理 × 回帰テスト × 改善の資産化。LangGraph / DeepEval / Langfuse の設計思想をローカルHTMLに応用した試験機能です。各ライブラリ本体の組み込み・自律AIエージェントではありません。</p></div><span class="pill warn" id="evolve-badge">UNVERIFIED</span></div>
+ <div class="callout warn" style="margin-bottom:16px">本機能は外部通信・追加課金なし。回帰テストのPASSは<strong>OS判定ロジック</strong>のテスト結果で、漫画画像の目視QAや公開許可を意味しません。文字認識・画像認識・自動投稿は行いません。</div>
+ <div class="panel"><div class="between"><h3 class="h3">制作ワークフローの状態</h3><button class="btn secondary small" data-go="qa">対象ページのQAへ →</button></div><div class="callout" id="evolve-next">判定準備中</div><div id="evolve-flow" style="margin-top:10px"></div></div>
+ <div class="section panel"><div class="between"><h3 class="h3">回帰テスト・再発防止チェック</h3><button class="btn" id="evolve-run-tests">テストを実行</button></div><p class="desc">原稿の改変、コマ番号、吹き出し順の逆転、曖昧な位置、画像未確認時のPASS禁止を、固定したテスト条件で検査します。</p><div id="evolve-tests" class="callout warn">まだテストを実行していません。</div><p class="note" id="evolve-tested-at" style="margin-top:10px"></p></div>
+ <div class="section panel"><h3 class="h3">発見した問題を改善資産にする</h3><div class="formgrid"><label class="field">問題の分類<select class="select" id="evolve-category"><option value="spatial">人物配置・空間</option><option value="bubble">吹き出し順・尻尾</option><option value="text">セリフ・文字</option><option value="identity">キャラクターの顔・MASTER</option><option value="workflow">運用・その他</option></select></label><label class="field">対象ページ<select class="select" id="evolve-page"></select></label></div><label class="field">起きた事実（推測でなく観察）<textarea class="text-area" id="evolve-observed" maxlength="1200" placeholder="例：5コマ目で人物が元の座席から移動した"></textarea></label><label class="field">本来あるべき状態<textarea class="text-area" id="evolve-expected" maxlength="1200" placeholder="例：人物Aと人物Bはテーブル越しに向かい合う"></textarea></label><label class="field">修正・再発防止策（未確定なら『要検討』）<textarea class="text-area" id="evolve-solution" maxlength="1600" placeholder="例：座席LOCKを先に固定。修正後に全6コマを再検査"></textarea></label><button id="evolve-save-case" class="btn">改善ケースを保存</button><div class="callout" style="margin-top:12px">保存直後は「未再検証」です。完了扱いにするには、改善後の実画像を確認し、再検証結果を入力してください。</div></div>
+ <div class="section panel"><h3 class="h3">改善ケース台帳</h3><div id="evolve-cases"></div></div>
+</section>
+
+<section id="tab-work" class="hidden">
+  <div class="between"><div><h2 class="h2">PRODUCTION LOG</h2><p class="desc">制作時間・試行回数・失敗原因をページ別に記録。短い改善サイクルを数字で可視化します。</p></div><span class="pill">計測は手入力</span></div>
+  <div class="mini-grid" id="work-metrics"></div>
+  <div class="grid two section">
+    <div class="panel">
+      <h3 class="h3">作業を記録する</h3>
+      <label class="field">対象ページ<select id="work-page" class="select"></select></label>
+      <div class="formgrid">
+        <label class="field">工程<select id="work-stage" class="select"><option value="script">原稿・構成</option><option value="image">画像制作</option><option value="qa">QA・修正</option><option value="motion">動画制作</option><option value="post">投稿準備</option></select></label>
+        <label class="field">結果<select id="work-result" class="select"><option value="pass">PASS／完了</option><option value="fail">FAIL／要改善</option><option value="progress">作業中</option></select></label>
+        <label class="field">実作業時間（分）<input id="work-minutes" class="input" type="number" min="1" max="1440" value="20"></label>
+        <label class="field">試行回数<input id="work-attempts" class="input" type="number" min="1" max="100" value="1"></label>
+      </div>
+      <label class="field">失敗原因・改善した点（事実のみ）<textarea id="work-note" class="text-area" placeholder="例：文字化けを発見。画像内文字列を再確認した。"></textarea></label>
+      <button id="work-add" class="btn" style="margin-top:12px">作業記録を保存</button>
+      <p class="helper">記録だけではMASTER承認やQAのPASSにはなりません。</p>
+    </div>
+    <div class="panel"><h3 class="h3">ページ別の制作ゲート</h3><div id="work-gates"></div><div class="callout warn" style="margin-top:15px">公開可否はQAゲートで判断。作業時間が短いだけでは品質達成と判定しません。</div></div>
+  </div>
+  <div class="section panel"><div class="between"><h3 class="h3">制作履歴</h3><button id="work-export-csv" class="btn secondary small">作業履歴CSV</button></div><div id="work-list"></div></div>
+</section>
+<section id="tab-post" class="hidden">
+  <div class="between"><div><h2 class="h2">MIRROR POST BOARD</h2><p class="desc">複数SNSに出す作品を一元管理。これは投稿の手動台帳で、外部サービスへの自動予約はまだ行いません。</p></div><span class="pill warn">外部接続なし</span></div>
+  <div class="mini-grid" id="post-stats"></div>
+  <div class="grid two section">
+    <div class="panel">
+      <h3 class="h3">投稿計画を登録</h3>
+      <label class="field">作品タイトル<input id="post-title" class="input" maxlength="150" placeholder="例：頼まれると、つい頑張りすぎる"></label>
+      <label class="field">公開媒体</label>
+      <div class="form-checks" id="post-channels">
+        <label class="checkline"><input type="checkbox" value="YouTube">YouTube</label><label class="checkline"><input type="checkbox" value="Instagram">Instagram</label><label class="checkline"><input type="checkbox" value="TikTok">TikTok</label><label class="checkline"><input type="checkbox" value="X">X</label><label class="checkline"><input type="checkbox" value="note">note</label>
+      </div>
+      <div class="formgrid">
+        <label class="field">関連するページ<select class="select" id="post-page"><option value="">独立作品・ページ未連携</option></select></label>
+        <label class="field">投稿予定（日本時間）<input class="input" id="post-datetime" type="datetime-local"></label>
+        <label class="field">ステータス<select id="post-status" class="select"><option value="idea">企画中</option><option value="draft">制作中</option><option value="scheduled">外部ツールで予約済み</option><option value="published">実際に公開済み</option><option value="failed">投稿エラー</option></select></label>
+        <label class="field">公開URL（任意）<input id="post-url" class="input" type="url" placeholder="https://..."></label>
+      </div>
+      <label class="field">導入／説明文／次の改善点<textarea class="text-area" id="post-note" placeholder="冒頭3秒の工夫、導線、ABテストの仮説"></textarea></label>
+      <label class="checkline"><input id="post-human-qa" type="checkbox"><span>独立作品について、私自身が映像・表現・設定を目視確認した（未連携の場合のゲート）</span></label>
+      <label class="checkline"><input id="post-external-confirm" type="checkbox"><span>「予約済み」「公開済み」は外部SNS／投稿ツールで実際に確認した</span></label>
+      <button id="post-add" class="btn" style="margin-top:12px">投稿台帳に登録</button>
+      <div class="callout warn" style="margin-top:14px">ページ連携作品を予約済み・公開済みとして記録するには、そのページのQAがPASSである必要があります。独立作品は人間の目視確認が必要です。</div>
+    </div>
+    <div class="panel"><h3 class="h3">運用ルール</h3><div class="step"><div class="number">1</div><div><b>元作品を確定</b><p>MASTER・原稿・映像QAを確認</p></div></div><div class="step"><div class="number">2</div><div><b>媒体ごとのタイトル・説明文を調整</b><p>同じ映像を使う場合も、冒頭と導線を比較検証</p></div></div><div class="step"><div class="number">3</div><div><b>実際の投稿ツールで予約</b><p>予約成功後だけ「外部ツールで予約済み」にする</p></div></div><div class="step"><div class="number">4</div><div><b>公開を確認し実績を記録</b><p>失敗時はエラーを記録し、二重投稿を防止する</p></div></div></div>
+  </div>
+  <div class="section panel"><div class="between"><h3 class="h3">投稿台帳</h3><div class="quick-row"><select id="post-filter" class="select" style="width:auto;margin:0"><option value="all">すべて</option><option value="idea">企画中</option><option value="draft">制作中</option><option value="scheduled">予約済み</option><option value="published">公開済み</option><option value="failed">エラー</option></select><button class="btn secondary small" id="post-export-csv">CSV</button></div></div><div id="post-list"></div></div>
+</section>
+<section class="hidden" id="tab-growth">
+  <div class="between"><div><h2 class="h2">GROWTH & REVENUE LAB</h2><p class="desc">再生 → フォロー → noteへの移動 → 売上。事実の記録と仮説を分けて改善します。</p></div><span class="pill">データは手入力</span></div>
+  <div class="grid two">
+    <div class="panel">
+      <h3 class="h3">公開作品の累計実績を更新</h3>
+      <label class="field">対象作品<select id="metric-post" class="select"></select></label>
+      <div class="formgrid">
+        <label class="field">再生数<input id="metric-views" class="input" type="number" min="0" value="0"></label>
+        <label class="field">いいね<input id="metric-likes" class="input" type="number" min="0" value="0"></label>
+        <label class="field">保存数<input id="metric-saves" class="input" type="number" min="0" value="0"></label>
+        <label class="field">増加フォロワー<input id="metric-follows" class="input" type="number" min="0" value="0"></label>
+        <label class="field">noteへの遷移数（計測値）<input id="metric-clicks" class="input" type="number" min="0" value="0"></label>
+        <label class="field">コメント<input id="metric-comments" class="input" type="number" min="0" value="0"></label>
+      </div>
+      <button id="metric-save" class="btn" style="margin-top:14px">実績を更新</button>
+      <p class="helper">入力するのは現時点の累計値です（追加分ではありません）。実際に計測できない数値は0として扱わず、空欄のまま登録してください。</p>
+    </div>
+    <div class="panel">
+      <h3 class="h3">成長指標</h3><div id="growth-metrics" class="mini-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+      <hr class="divider"><h3 class="h3">次の検証案</h3><div id="growth-suggestions"></div>
+    </div>
+  </div>
+  <div class="section grid two">
+    <div class="panel"><h3 class="h3">売上・経費を登録</h3><label class="field">日付<input type="date" id="revenue-date" class="input"></label><div class="formgrid"><label class="field">区分<select id="revenue-kind" class="select"><option value="sale">実売上・入金</option><option value="cost">実経費</option></select></label><label class="field">金額（円）<input id="revenue-amount" class="input" type="number" min="1" step="1" placeholder="9800"></label></div><label class="field">内容<input class="input" id="revenue-label" maxlength="180" placeholder="例：note有料記事、制作サービス、API利用料"></label><button id="revenue-add" class="btn" style="margin-top:14px">確定した金額を記録</button><p class="helper">見込み・試算は入力しないでください。収益と経費を別々に記録し、実績を二重計上しません。</p></div>
+    <div class="panel"><div class="between"><h3 class="h3">月次収支</h3><input id="revenue-month" type="month" class="input" style="width:165px;margin:0"></div><div id="revenue-summary"></div><div class="formgrid"><label class="field">月間売上目標（円）<input id="revenue-goal" class="input" type="number" min="0" step="1000" value="300000"></label><div style="align-self:end"><button id="revenue-save-goal" class="btn secondary small">目標を更新</button></div></div><div id="revenue-progress" style="margin-top:14px"></div></div>
+  </div>
+  <div class="section grid two"><div class="panel"><h3 class="h3">実績のある作品を比較</h3><div id="growth-rank"></div></div><div class="panel"><div class="between"><h3 class="h3">売上・経費履歴</h3><button id="growth-export-csv" class="btn secondary small">収支CSV</button></div><div id="revenue-list"></div></div></div>
+</section>
+<section class="hidden" id="tab-data"><h2 class="h2">BACKUP & SECURITY</h2>
+<div class="panel" style="margin-bottom:18px"><h3 class="h3">作品ワークスペース名</h3><p class="desc">この端末の制作プロジェクト名を登録します。データは外部送信されません。</p><label class="field">作品名<input class="input" id="workspace-name" maxlength="100"></label><button id="workspace-save" class="btn secondary" style="margin-top:12px">作品名を更新</button></div><p class="desc">本版はアカウント登録なし・外部サーバー送信なしの個人用パイロットです。保存状態はブラウザに依存します。</p><div class="panel" style="margin-bottom:18px"><div class="between"><h3 class="h3">起動URLとデータ移行</h3><span class="pill warn">重要</span></div><div class="callout warn">旧content://（Filesから開いたHTML）と新HTTPSは保存領域が別です。以前のMASTER・QA・改善記録は自動で引き継がれません。旧OSで最新JSONをエクスポートし、このページの「復元」で取り込んでください。公開用リポジトリにJSONやMASTER画像を置かないでください。</div><p class="note">URL：<span id="pwa-data-url">未確認</span></p></div>
+<div class="grid two"><div class="panel"><div class="kicker">EXPORT</div><h3 class="h3" style="margin-top:8px">バックアップを書き出す</h3><p class="desc">登録データと画像を一つのJSONにまとめます。書き出した後、端末のダウンロード先でファイルが実在することを確認してください。</p><button class="btn" id="export-btn">バックアップを書き出す ↓</button><p class="note">画像を含むためファイルが大きくなることがあります。</p></div><div class="panel"><div class="kicker">RESTORE</div><h3 class="h3" style="margin-top:8px">バックアップから復元</h3><p class="desc">バックアップに含まれるデータで現在の端末内の登録内容を置き換えます。</p><input type="file" accept=".json,application/json" id="restore-file" class="image-upload"><button class="btn secondary" id="restore-btn">ファイルを読み込む</button></div></div><div class="section panel"><h3 class="h3">データの扱い</h3><ul class="list-clean"><li>キャラクター画像はブラウザのIndexedDBに保存します。</li><li>文章・承認フラグはlocalStorageに保存します。</li><li>端末やブラウザを変えるとデータは自動では引き継がれません。定期的にJSONを保存してください。</li><li>正式MASTERの承認は<strong>ユーザーによる確認の記録</strong>であり、ツールによる画像鑑定ではありません。</li><li>初回の起動には通信が必要です。オフライン起動はPWAの基本ファイルが事前に保存された場合に限ります。バックアップ復元は形式・画像の検証後に実行します。公式API連携・クラウド同期は将来の実装対象です。</li></ul></div><div class="section panel"><div class="between"><h3 class="h3">操作記録（参考・改ざん防止ではありません）</h3><button class="btn secondary small" id="audit-export">操作記録CSV</button></div><p class="desc">MASTER承認・画像差替え・原稿登録などを記録。端末内データのため法的な監査証跡には使用できません。</p><div id="audit-list"></div></div><div class="section callout warn">注意：ブラウザの閲覧データを削除すると作業内容が消える場合があります。ブラウザの「ファイルで開く」方式では保存領域の扱いが異なることもあるため、バックアップを必ず取ってください。</div></section>
+</main></div>
+<footer class="foot"><div class="wrap">MIRROR FACTORY OS v1.0 · PWA PRIVATE TEST · NO SILENT PASS<br>Identity ＞ Motion ＞ Beauty</div></footer><div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+
+
+'use strict';
+(() => {
+const CREATOR_EDITION=window.MIRROR_CREATOR_EDITION===true;
+const STORAGE_KEY=CREATOR_EDITION?'creator_factory_os_v04':'mirror_factory_os_v09';
+const DB_NAME=CREATOR_EDITION?'creator_factory_assets_v04':'mirror_factory_assets_v09';
+const ASSET_STORE='files';
+// Public shell only: private story / CHARACTER MASTER is imported from local JSON backup.
+const defaultCharacters=[
+ {id:'sample-a',name:'サンプル人物A',label:'人物A',canon:'正式MASTER画像が未登録です。',verified:false,fileName:'',confirmedAt:''},
+ {id:'sample-b',name:'サンプル人物B',label:'人物B',canon:'正式MASTER画像が未登録です。',verified:false,fileName:'',confirmedAt:''}
+];
+const p08Lines=[
+ ['A','サンプル1。'],['画面','サンプル表示'],['B','サンプル3。'],['A','サンプル4。'],['B','サンプル5。'],['A','サンプル6。'],['B','サンプル7。'],['A','サンプル8。'],['B','サンプル9。']
+];
+const mirrorInitial={version:'0.9',characters:defaultCharacters,pages:[{id:'sample-page',chapter:'サンプル',pageno:'P01',title:'最初のページ',characters:['sample-a','sample-b'],locked:true,lines:[['人物A','ここから始めましょう。']],constraints:'確定した内容のみ制作します。',sceneNotes:'',qa:{transcript:'',checks:[],fileName:'',textChecked:false}}],selectedPage:'sample-page'};
+const creatorInitial={version:'0.4',characters:[{id:'creator-main',name:'主人公',label:'主人公',canon:'外見情報は正式MASTER画像で登録するまでUNKNOWN。許諾を得た画像のみ利用する。',verified:false,fileName:'',confirmedAt:''}],pages:[{id:'creator-sample-p01',chapter:'サンプル',pageno:'P01',title:'最初の1ページ',characters:['creator-main'],locked:true,lines:[['主人公','ここから始めよう。']],constraints:'ここは操作練習用のサンプルページ。正式な作品では独自の原稿・制約を登録する。',sceneNotes:'',qa:{transcript:'',checks:[],fileName:'',textChecked:false}}],selectedPage:'creator-sample-p01'};
+const initial=CREATOR_EDITION?creatorInitial:mirrorInitial;
+
+const panelPositions=['右上','左上','右中','左中','右下','左下'];
+const p08PerPanel=[[0,1],[2,3],[4],[5],[6,7],[8]];
+const p08Cameras=['1コマ目の構図を確認','2コマ目の構図を確認','3コマ目の構図を確認','4コマ目の構図を確認','5コマ目の構図を確認','6コマ目の構図を確認'];
+function makeP08Continuity(){return {template:'P08-SPATIAL-001',panelCount:6,scene:'座席位置は元の資料を確認して固定',seats:{},panels:p08PerPanel.map((indices,i)=>({number:i+1,position:panelPositions[i],camera:p08Cameras[i],lineIndices:indices.slice(),tails:indices.map(n=>p08Lines[n][0]==='画面'?'画面表示（尻尾なし）':p08Lines[n][0]),characters:{},checks:[]})),issues:[]};}
+function sourceHash(lines){let h=2166136261>>>0;const value=JSON.stringify(lines);for(let i=0;i<value.length;i++){h^=value.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(16).padStart(8,'0');}
+function continuityStructure(p){
+ const plan=p.continuity;let issues=[];if(!plan||!Array.isArray(plan.panels))return {pass:false,issues:['コマ設計図が未登録です'],checked:0,total:0};
+ if(plan.panelCount!==plan.panels.length||plan.panelCount<1||plan.panelCount>12)issues.push('コマ数に矛盾があります');
+ const n=plan.panels.length,indices=[];
+ for(let i=0;i<n;i++){
+  const pan=plan.panels[i];if(!pan||pan.number!==i+1)issues.push('コマ番号が順番と一致しません: '+(i+1));
+  if(n===6&&pan?.position!==panelPositions[i])issues.push('コマ'+(i+1)+'の位置が読み順と不一致');
+  if(!Array.isArray(pan?.lineIndices))issues.push('コマ'+(i+1)+'のセリフ割付がありません');
+  else for(let j=0;j<pan.lineIndices.length;j++){
+   const idx=pan.lineIndices[j];indices.push(idx);if(!Number.isInteger(idx)||idx<0||idx>=p.lines.length){issues.push('原稿の行番号が範囲外');continue;}
+   const speaker=p.lines[idx][0],target=pan.tails?.[j];if(target!==(speaker==='画面'?'画面表示（尻尾なし）':speaker))issues.push('コマ'+(i+1)+' セリフ'+(idx+1)+'の尻尾割付が不一致');
+  }
+  if(p.id==='ch04-p08'){
+   if(JSON.stringify(pan.lineIndices)!==JSON.stringify(p08PerPanel[i]))issues.push('P08の確定セリフ割付と不一致：コマ'+(i+1));
+   for(const [who,loc] of Object.entries(pan.characters||{})){
+    const required=plan.seats?.[who];if(loc!=='画面外'&&loc!==required)issues.push('コマ'+(i+1)+' '+who+'の座席が固定位置と不一致');
+   }
+  }
+ }
+ if(indices.length!==p.lines.length||indices.some((v,i)=>v!==i))issues.push('原稿セリフの割付順・重複・欠落を検出しました');
+ if(p.sourceLockHash && sourceHash(p.lines)!==p.sourceLockHash)issues.push('確定原稿の変更を検出しました');
+ let total=n*3,checked=plan.panels.reduce((sum,pan)=>sum+(pan.checks||[]).filter(x=>['panel','tails','spatial'].includes(x)).length,0);
+ return {pass:issues.length===0,issues:[...new Set(issues)],checked,total};
+}
+
+// 右→左・上→下: 高低差が大きいときだけ上下を優先。これは画像認識ではなく、入力された位置の幾何判定。
+const bubblePanelCrops=[
+ {x:.509,y:.047,w:.479,h:.299}, {x:.013,y:.047,w:.481,h:.299},
+ {x:.509,y:.350,w:.479,h:.282}, {x:.013,y:.350,w:.481,h:.282},
+ {x:.509,y:.639,w:.479,h:.345}, {x:.013,y:.639,w:.481,h:.345}
+];
+function bubbleOrderCompare(a,b){
+ const dy=a.pos.y-b.pos.y,dx=a.pos.x-b.pos.x;
+ if(Math.abs(dy)>.20)return dy<0?-1:1; // different vertical tier: upper bubble first
+ if(Math.abs(dx)>.08)return dx>0?-1:1; // same tier: right-hand bubble first
+ if(Math.abs(dy)>.07)return dy<0?-1:1;
+ return 0; // close center positions cannot be resolved reliably
+}
+function bubbleOrderStatus(p){
+ if(!p.continuity?.panels)return {pass:false,required:0,done:0,results:[],reason:'コマ設計図がありません'};
+ if(p.id!=='ch04-p08')return {pass:false,required:0,done:0,results:[],reason:'現バージョンの吹き出し画像切り抜きはP08のみ対応'};
+ const results=[],panels=p.continuity.panels;let required=0,done=0;
+ for(let i=0;i<panels.length;i++){
+  const pan=panels[i];const indexes=pan.lineIndices.filter(idx=>p.lines[idx]&&p.lines[idx][0]!=='画面');
+  if(indexes.length<2)continue;
+  required++;
+  const spots=pan.bubbleCenters||{};
+  const all=indexes.every(idx=>spots[idx]&&Number.isFinite(spots[idx].x)&&Number.isFinite(spots[idx].y)&&spots[idx].x>=0&&spots[idx].x<=1&&spots[idx].y>=0&&spots[idx].y<=1);
+  if(!all){results.push({panel:i+1,pass:false,done:false,reason:'吹き出しの位置が未登録',expected:indexes});continue}
+  done++;
+  const sorted=indexes.map(idx=>({idx,pos:spots[idx]})).sort(bubbleOrderCompare);
+  const ambiguous=sorted.some((b,j)=>j>0&&bubbleOrderCompare(sorted[j-1],b)===0);
+  const obtained=sorted.map(o=>o.idx);
+  const pass=!ambiguous&&indexes.every((idx,j)=>idx===obtained[j]);
+  results.push({panel:i+1,pass,done:true,ambiguous,expected:indexes,obtained,reason:ambiguous?'位置が近く、読む順番を確定できません':pass?'原稿の発言順と一致':'画像上の読む順番が原稿と不一致'});
+ }
+ const hasImage=!!p.qa?.fileName&&availablePageImages.has(p.id);
+ return {pass:hasImage&&required>0&&done===required&&results.every(r=>r.pass),required,done,results,reason:!hasImage?'QAに画像を登録してください':done!==required?'位置指定が未完了':'判定完了'};
+}
+function continuityStatus(p){const structure=continuityStructure(p),hasImage=!!p.qa?.fileName&&availablePageImages.has(p.id);return {...structure,hasImage,visual:structure.total>0&&structure.checked===structure.total,pass:structure.pass&&structure.total>0&&structure.checked===structure.total&&hasImage&&bubbleOrderStatus(p).pass};}
+function invalidateContinuity(p){if(p.continuity?.panels)for(const pan of p.continuity.panels){pan.checks=[];pan.bubbleCenters={};}}
+const clone=(x)=>JSON.parse(JSON.stringify(x));
+let state=loadState(), dbPromise=null,activeTab='home',openUrls=[],toastTimer=0;
+function migrateExtras(){state.version='0.9';if(!Array.isArray(state.improvementCases))state.improvementCases=[];if(!Array.isArray(state.regressionRuns))state.regressionRuns=[];for(const p of state.pages){if(p.id==='ch04-p08'&&!p.continuity)p.continuity=makeP08Continuity();if(p.locked&&!p.sourceLockHash)p.sourceLockHash=sourceHash(p.lines);}if(!Array.isArray(state.workLogs))state.workLogs=[];if(!Array.isArray(state.posts))state.posts=[];if(!Array.isArray(state.sales))state.sales=[];if(!state.settings||typeof state.settings!=='object')state.settings={};if(!Number.isFinite(Number(state.settings.monthlyGoal)))state.settings.monthlyGoal=300000;
+if(typeof state.settings.projectName!=='string')state.settings.projectName=CREATOR_EDITION?'新しい漫画プロジェクト':'PROJECT MIRROR';
+if(!Array.isArray(state.auditEvents))state.auditEvents=[];for(const p of state.pages){if(p.continuity?.panels&&!p.typography)p.typography=makeTypographyPlan(p);}}
+function audit(action,details=''){state.auditEvents.push({at:new Date().toISOString(),action:String(action).slice(0,90),details:String(details).slice(0,300)});if(state.auditEvents.length>4000)state.auditEvents=state.auditEvents.slice(-4000);}
+
+migrateExtras();
+const $=(q,root=document)=>root.querySelector(q);
+const $$=(q,root=document)=>Array.from(root.querySelectorAll(q));
+const esc=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function loadState(){try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY));if(s&&(s.version==='0.1'||s.version==='0.2'||s.version==='0.3'||s.version==='0.4'||s.version==='0.5'||s.version==='0.6'||s.version==='0.7'||s.version==='0.8'||s.version==='0.9')&&Array.isArray(s.pages)&&Array.isArray(s.characters)){s.version='0.9';return s}}catch(e){console.warn('local data unavailable',e)}return clone(initial)}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));return true}catch(e){alert('ローカル保存に失敗しました。バックアップを検討してください。');return false}}
+function toast(m,bad=false){let el=$('#toast');el.textContent=m;el.style.background=bad?'#ffd2db':'#c8ffe9';el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3100)}
+function page(){return state.pages.find(p=>p.id===state.selectedPage)||state.pages[0]}
+const assetKey=(id)=>'master:'+id;const qaKey=(id)=>'qa:'+id;
+function db(){if(dbPromise)return dbPromise;dbPromise=new Promise((resolve,reject)=>{if(!window.indexedDB){reject(Error('IndexedDB unavailable'));return}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(ASSET_STORE))req.result.createObjectStore(ASSET_STORE)};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});return dbPromise}
+async function assetSet(key,blob){const d=await db();return new Promise((resolve,reject)=>{const tx=d.transaction(ASSET_STORE,'readwrite');tx.objectStore(ASSET_STORE).put(blob,key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
+async function assetGet(key){try{const d=await db();return await new Promise((resolve,reject)=>{const req=d.transaction(ASSET_STORE,'readonly').objectStore(ASSET_STORE).get(key);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)})}catch(e){return null}}
+async function assetClear(){const d=await db();return new Promise((resolve,reject)=>{let tx=d.transaction(ASSET_STORE,'readwrite');tx.objectStore(ASSET_STORE).clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+async function assetReplaceAll(items){const d=await db();return new Promise((resolve,reject)=>{const tx=d.transaction(ASSET_STORE,'readwrite');const store=tx.objectStore(ASSET_STORE);store.clear();for(const [key,blob] of items)store.put(blob,key);tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error||new Error('データ保存失敗'));tx.onerror=()=>reject(tx.error||new Error('データ保存失敗'));});}
+const ACCEPTED_IMAGE_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif']);
+async function validImage(blob){if(!blob||!ACCEPTED_IMAGE_TYPES.has(blob.type)||blob.size<8||blob.size>20*1024*1024)return false;const bytes=new Uint8Array(await blob.slice(0,16).arrayBuffer());let hex=Array.from(bytes.slice(0,12),b=>b.toString(16).padStart(2,'0')).join('');return blob.type==='image/png'?hex.startsWith('89504e470d0a1a0a'):blob.type==='image/jpeg'?hex.startsWith('ffd8ff'):blob.type==='image/gif'?hex.startsWith('47494638'):blob.type==='image/webp'?String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP':false;}
+
+function sha256HexLocal(bytes){
+ const k=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+ const h=new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+ const n=bytes.length,size=Math.ceil((n+9)/64)*64,msg=new Uint8Array(size);msg.set(bytes);msg[n]=0x80;
+ const dv=new DataView(msg.buffer);dv.setUint32(size-8,Math.floor(n/536870912)>>>0,false);dv.setUint32(size-4,(n*8)>>>0,false);
+ const w=new Uint32Array(64);const ro=(v,s)=>(v>>>s)|(v<<(32-s));
+ for(let offset=0;offset<size;offset+=64){
+  for(let t=0;t<16;t++)w[t]=dv.getUint32(offset+t*4,false);
+  for(let t=16;t<64;t++){const x=w[t-15],y=w[t-2];w[t]=((w[t-16]+(ro(x,7)^ro(x,18)^(x>>>3)))+(w[t-7]+(ro(y,17)^ro(y,19)^(y>>>10))))>>>0;}
+  let a=h[0],b=h[1],c=h[2],d=h[3],e=h[4],f=h[5],g=h[6],hh=h[7];
+  for(let t=0;t<64;t++){
+   const s1=ro(e,6)^ro(e,11)^ro(e,25),ch=(e&f)^(~e&g),temp1=(hh+s1+ch+k[t]+w[t])>>>0;
+   const s0=ro(a,2)^ro(a,13)^ro(a,22),maj=(a&b)^(a&c)^(b&c),temp2=(s0+maj)>>>0;
+   hh=g;g=f;f=e;e=(d+temp1)>>>0;d=c;c=b;b=a;a=(temp1+temp2)>>>0;
+  }
+  h[0]=(h[0]+a)>>>0;h[1]=(h[1]+b)>>>0;h[2]=(h[2]+c)>>>0;h[3]=(h[3]+d)>>>0;h[4]=(h[4]+e)>>>0;h[5]=(h[5]+f)>>>0;h[6]=(h[6]+g)>>>0;h[7]=(h[7]+hh)>>>0;
+ }
+ return Array.from(h,x=>x.toString(16).padStart(8,'0')).join('');
+}
+async function sha256(blob){const bytes=await blob.arrayBuffer();if(!crypto?.subtle)return sha256HexLocal(new Uint8Array(bytes));const hash=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');}
+
+function createUrl(blob){const url=URL.createObjectURL(blob);openUrls.push(url);return url}
+function revokeUrls(){openUrls.forEach(u=>URL.revokeObjectURL(u));openUrls=[]}
+let availableMasters=new Set(),availablePageImages=new Set();
+async function syncEvidence(){const masters=new Set(),pages=new Set();for(const c of state.characters){if(await assetGet(assetKey(c.id)))masters.add(c.id)}for(const p of state.pages){if(await assetGet(qaKey(p.id)))pages.add(p.id)}availableMasters=masters;availablePageImages=pages;}
+function validMaster(ch){return !!(ch&&ch.verified&&ch.fileName&&availableMasters.has(ch.id))}
+function masterGates(p){return (p.characters||[]).map(id=>{const ch=state.characters.find(x=>x.id===id);return {id,name:ch?.name||id,ok:validMaster(ch)}})}
+// v0.9: 設計時に各コマを同一倍率へ固定。実画像の自動測定結果ではない。
+function makeTypographyPlan(p){const n=p?.continuity?.panels?.length||0;return {referencePct:100,panelPct:Array(n).fill(100)};}
+function typographyStatus(p){
+ const plan=p.typography,n=p.continuity?.panels?.length||0;
+ if(!plan||!n||!Array.isArray(plan.panelPct)||plan.panelPct.length!==n)return {pass:false,reason:'コマごとの文字サイズ設定が未登録',n,uniform:false};
+ const valid=v=>Number.isInteger(v)&&v>=70&&v<=160;
+ if(!valid(plan.referencePct)||!plan.panelPct.every(valid))return {pass:false,reason:'サイズ指定が未入力または範囲外',n,uniform:false};
+ const mismatch=plan.panelPct.map((v,i)=>v!==plan.referencePct?i+1:null).filter(Boolean);
+ return {pass:mismatch.length===0,uniform:mismatch.length===0,reason:mismatch.length?'サイズ不一致：'+mismatch.map(i=>'コマ'+i).join('、'):'全コマの制作設定値が一致',n,mismatch};
+}
+const commonQaChecklist=[
+ ['visualAuthority','正式MASTER画像と人物の顔・姿勢・衣服を目視照合した'],
+ ['styleLock','人物は青年漫画寄り、背景は映画的な実写感を維持した'],
+ ['panels','指定されたコマ数・画面比率・右上から左下への読み順を確認した'],
+ ['speakers','話者・視線・行動ベクトル・吹き出し位置を確認した'],
+ ['balloonReading','コマ内の吹き出し順が確定原稿どおりで、右→左・上→下で迷わず読めると目視確認した'],
+ ['typeUniform','全コマのセリフ文字サイズが同一基準であり、極端に小さい文字がないと実画像で目視確認した'],
+ ['outerText','コマ枠外に余分なテキストがなく、文字化けがないことを確認した'],
+ ['final','完成画像のすべてのコマを直接見て、未検証の推測がないと確認した']
+];
+function qaChecklist(p){let checks=[...commonQaChecklist];checks.splice(5,0,['story',p.id==='ch04-p08'?'確定した物語設定と描写が一致している':'このページに確定されている物語制約に矛盾していない']);return checks}
+function expectedText(p){return p.lines.map(([a,b])=>a+'｜'+b).join('\n')}
+function normalizedTranscript(s){return String(s||'').replace(/\r/g,'').trim().split('\n').filter(l=>l.trim()!=='')}
+function compareTranscript(p){let src=normalizedTranscript(p.qa?.transcript||'');let expected=normalizedTranscript(expectedText(p));if(!src.length)return {pass:false,empty:true,mismatches:[],expected:expected.length,actual:0};let mismatches=[];for(let i=0;i<Math.max(src.length,expected.length);i++){if(src[i]!==expected[i])mismatches.push({n:i+1,expected:expected[i]??'[なし]',actual:src[i]??'[なし]'})}return {pass:mismatches.length===0,empty:false,mismatches,expected:expected.length,actual:src.length}}
+function qaStatus(p){let masters=(p.characters||[]).length>0&&masterGates(p).every(g=>g.ok),allChecks=qaChecklist(p).every(([id])=>p.qa?.checks?.includes(id)),text=!!p.qa?.textChecked&&compareTranscript(p).pass,hasImage=!!p.qa?.fileName&&availablePageImages.has(p.id),continuity=continuityStatus(p),typography=typographyStatus(p);return {masters,allChecks,text,hasImage,continuity,typography,pass:masters&&allChecks&&text&&hasImage&&continuity.pass&&typography.pass}}
+function setTab(name){if(name==='evolve')renderEvolution();activeTab=name;$$('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));$$('[id^="tab-"]').forEach(x=>x.classList.toggle('hidden',x.id!=='tab-'+name));window.scrollTo({top:0,behavior:'instant'})}
+function renderToday(){
+ const target=page(),pending=masterGates(target).filter(g=>!g.ok),qa=qaStatus(target),currentMonth=JST_DAY().slice(0,7);
+ const today=JST_DAY(),logs=state.workLogs.filter(x=>String(x.date||'').startsWith(today.replace(/-/g,'/')) || String(x.date||'').startsWith(today));
+ const issues=(target.qa?.issues||[]).length,scheduled=state.posts.filter(x=>x.status==='scheduled').length,failed=state.posts.filter(x=>x.status==='failed').length;
+ let actions=[];
+ if(pending.length) actions.push({tab:'vault',title:'正式MASTERを確認',detail:pending.map(x=>x.name).join('・')+' の画像が未登録／未承認です'});
+ else if(!qa.pass) actions.push({tab:'qa',title:'現在のページのQAを進める',detail:target.chapter+' '+target.pageno+' はまだ未検証です'});
+ else actions.push({tab:'work',title:'次の制作工程を記録',detail:'現在のページはユーザー確認済みです'});
+ if(!logs.length) actions.push({tab:'work',title:'今日の制作時間を記録',detail:'計測なしでは制作効率の改善を評価できません'});
+ if(failed) actions.push({tab:'post',title:'投稿エラーを確認',detail:failed+'件のエラーが手動登録されています'});
+ else if(scheduled) actions.push({tab:'post',title:'公開状況を照合',detail:scheduled+'件の外部予約を手動登録しています'});
+ const elapsed=state.settings?.lastBackupExportAt?Math.floor((Date.now()-Date.parse(state.settings.lastBackupExportAt))/86400000):null;
+ if(elapsed===null||!Number.isFinite(elapsed)||elapsed>=7) actions.push({tab:'data',title:'バックアップを作成',detail:elapsed===null?'バックアップ書き出しの記録がありません':elapsed+'日前に書き出しを開始しました。再確認してください'});
+ const targetEl=$('#today-actions');if(targetEl)targetEl.innerHTML=actions.slice(0,4).map((x,i)=>`<div class="step"><span class="number">${i+1}</span><div style="flex:1"><b>${esc(x.title)}</b><p>${esc(x.detail)}</p><button type="button" class="btn secondary small" data-go="${esc(x.tab)}" style="margin-top:7px">開く →</button></div></div>`).join('') || '<div class="callout good">今日の優先チェックは完了しています。次の作品の制作を進めましょう。</div>';
+ const backup=state.settings?.lastBackupExportAt?new Date(state.settings.lastBackupExportAt).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'}):'記録なし';
+ const backupEl=$('#backup-indicator');if(backupEl)backupEl.textContent='バックアップ書き出し操作：'+backup+'（端末への保存完了は未検証）';
+ const statusEl=$('#safety-summary');if(statusEl)statusEl.textContent=`${esc(target.chapter+' '+target.pageno)}｜QA ${qa.pass?'USER-REVIEWED PASS':'UNVERIFIED'}｜改善記録 ${issues}件`;
+}
+function renderHome(){renderWorkspace();renderToday();let verified=state.characters.filter(validMaster).length;let audited=state.pages.filter(p=>qaStatus(p).pass).length;$('#overview-stats').innerHTML=[['登録キャラクター',state.characters.length,'名','MASTER登録対象'],['MASTER承認済み',verified,'名',`${state.characters.length-verified}名がUNKNOWN`],['確認済みページ',audited,'ページ',`${state.pages.length}ページ登録中`]].map(([t,n,u,s])=>`<div class="panel"><div class="label">${esc(t)}</div><div class="metric">${n}<span style="font-size:12px;font-weight:500;margin-left:6px;color:var(--muted)">${u}</span></div><div class="tiny">${esc(s)}</div></div>`).join('');let p=page(),g=masterGates(p),s=qaStatus(p);$('#home-gates').innerHTML=[['原稿のTEXT LOCK',p.lines?.length>0],['登場人物のMASTER参照',g.every(x=>x.ok)],['セリフの厳密照合',s.text],['生成画像の登録',s.hasImage],['全コマ文字サイズ設計',s.typography.pass],['人間による視覚チェック',s.allChecks]].map(([name,ok])=>`<div class="step"><span class="number" style="background:${ok?'#194d4a':'#51412b'};color:${ok?'#7bf1d0':'#ffe1a9'}">${ok?'✓':'!'}</span><div><div style="font-weight:730">${esc(name)}</div><p>${ok?'確認項目を満たしています':'未確認／未完了'}</p></div></div>`).join('');$('#home-gate').textContent=s.pass?'ユーザー確認済み':'未検証';$('#home-gate').className='pill '+(s.pass?'good':'warn')}
+async function renderVault(){let verified=state.characters.filter(validMaster).length;$('#vault-counter').textContent=verified+' / '+state.characters.length+' CONFIRMED';$('#char-grid').innerHTML=state.characters.map(ch=>`<article class="panel"><div class="card-head"><div><div class="kicker">CHARACTER CANON</div><h3 class="card-title">${esc(ch.name)}</h3></div><span class="pill ${validMaster(ch)?'good':'warn'}">${validMaster(ch)?'USER CONFIRMED':'UNKNOWN'}</span></div><div class="asset" id="preview-${esc(ch.id)}">画像未登録・外見UNKNOWN</div><div class="tiny ellipsis" title="${esc(ch.fileName)}" style="margin-top:8px">${ch.fileName?esc(ch.fileName):'正式MASTER未登録'}</div><p class="desc" style="margin-top:12px">${esc(ch.canon)}</p><label class="field" for="upload-${esc(ch.id)}">正式MASTER画像を登録</label><input class="image-upload" type="file" accept="image/*" data-upload="${esc(ch.id)}" id="upload-${esc(ch.id)}"><label class="checkline"><input type="checkbox" data-confirm="${esc(ch.id)}" ${validMaster(ch)?'checked':''} ${ch.fileName?'':'disabled'}><span>この画像を正式MASTER／ユーザー承認済み画像として<strong>私自身が確認しました</strong></span></label><div class="tiny">${ch.confirmedAt?'承認記録：'+esc(ch.confirmedAt):'未承認。アップロードだけでは承認されません。'}</div></article>`).join('');for(const ch of state.characters){const node=document.getElementById('preview-'+ch.id);const file=await assetGet(assetKey(ch.id));if(file&&node){node.innerHTML=`<img src="${createUrl(file)}" alt="${esc(ch.name)}の登録画像">`}else if(node&&ch.fileName){node.textContent='画像実体が見つかりません。再登録してください。'}}}
+function renderWorkspace(){
+ const project=state.settings.projectName||'新しいプロジェクト';const display=$('#project-name-display');if(display)display.textContent=project;
+ const field=$('#workspace-name');if(field && document.activeElement!==field)field.value=project;
+ const events=$('#audit-list');if(events)events.innerHTML=state.auditEvents.length?state.auditEvents.slice(-30).reverse().map(x=>`<div class="record"><div class="tiny">${esc(x.at)}</div><b>${esc(x.action)}</b><div class="tiny">${esc(x.details)}</div></div>`).join(''):'<div class="empty">まだ操作記録はありません。</div>';
+}
+function renderSelects(){let options=state.pages.map(p=>`<option value="${esc(p.id)}" ${p.id===state.selectedPage?'selected':''}>${esc(p.chapter+' '+p.pageno+'「'+p.title+'」')}</option>`).join('');$('#source-page').innerHTML=options;$('#qa-page').innerHTML=options;$('#continuity-page').innerHTML=options;$('#bubble-page').innerHTML=options;$('#type-page').innerHTML=options;$('#new-char-select').innerHTML=state.characters.map(ch=>`<label class="checkline inline" style="margin-right:15px"><input type="checkbox" name="newcharacter" value="${esc(ch.id)}">${esc(ch.name)}</label>`).join('')}
+function renderSource(){const p=page();$('#reference-lines').innerHTML=p.lines.map(([speaker,line],i)=>`<div><span class="line-num">${String(i+1).padStart(2,'0')}</span><b>${esc(speaker)}</b>｜${esc(line)}</div>`).join('');const gates=masterGates(p);const okay=gates.length>0&&gates.every(x=>x.ok);$('#source-gate-badge').textContent=okay?'MASTER承認済み':'MASTER未確認';$('#source-gate-badge').className='pill '+(okay?'good':'warn');$('#source-preflight').innerHTML=gates.map(g=>`<div class="checkline"><span class="status-bullet ${g.ok?'ok':''}"></span><span>${esc(g.name)}：${g.ok?'ユーザー承認済み':'正式MASTER未登録／未承認'}</span></div>`).join('');$('#source-constraints').textContent=p.constraints||'UNKNOWN';$('#scene-notes').value=p.sceneNotes||''}
+async function renderQaImage(p){let b=await assetGet(qaKey(p.id));let box=$('#qa-image');if(box)box.innerHTML=b?`<img src="${createUrl(b)}" alt="生成ページの登録画像">`:'生成ページ画像が未登録です';}
+function textComparisonHTML(c){if(c.empty)return '<strong>未検証：</strong>文字列を入力してください。';if(c.pass)return '<strong>テキスト照合PASS：</strong>'+c.expected+'行が話者と文字を含め完全一致しました。ただし画像内テキストを自動読取した結果ではありません。';return `<strong>不一致が${c.mismatches.length}行あります。</strong><div style="font-size:12px;margin-top:7px">${c.mismatches.slice(0,5).map(x=>`<div>${x.n}行目　期待: ${esc(x.expected)}<br>実際: ${esc(x.actual)}</div>`).join('')}</div>`}
+function renderQa(){let p=page(),comp=compareTranscript(p),s=qaStatus(p);$('#qa-transcript').value=p.qa?.transcript||'';$('#qa-file-name').textContent=p.qa?.fileName?'登録画像：'+p.qa.fileName:'';$('#qa-text-result').innerHTML=textComparisonHTML(comp);$('#qa-text-result').className='callout '+((comp.pass&&p.qa?.textChecked)?'good':'warn');$('#qa-checks').innerHTML=qaChecklist(p).map(([id,text])=>`<label class="checkline"><input type="checkbox" data-qa-check="${esc(id)}" ${(p.qa.checks||[]).includes(id)?'checked':''}><span>${esc(text)}</span></label>`).join('');$('#qa-final-status').textContent=s.pass?'USER-REVIEWED PASS':'UNVERIFIED';$('#qa-final-status').className='pill '+(s.pass?'good':'warn');let pending=[];if(!s.masters)pending.push('正式MASTER承認');if(!s.text)pending.push('文字列照合');if(!s.hasImage)pending.push('ページ画像登録');if(!s.allChecks)pending.push('全目視項目');if(!s.continuity.pass)pending.push('4-LOCK連続性QA');if(!bubbleOrderStatus(p).pass)pending.push('吹き出し順LOCK');if(!s.typography.pass)pending.push('文字サイズLOCK');$('#qa-summary').textContent=s.pass?'ユーザー確認済み。これはアプリによる画像鑑定ではありません。印刷・公開前の最終確認を推奨します。':'NO SILENT PASS：未完了項目 '+pending.join('、');$('#qa-summary').className='callout '+(s.pass?'good':'warn');$('#qa-issue-list').innerHTML=(p.qa.issues||[]).length?(p.qa.issues||[]).slice().reverse().map(x=>`<div class="lines" style="margin-top:8px"><div class="tiny">${esc(x.at)}</div><div>${esc(x.text)}</div></div>`).join(''):'<p class="note">履歴はまだありません</p>';renderQaImage(p)}
+
+function renderTypography(){
+ const p=page(),plan=p.typography,s=typographyStatus(p);const badge=$('#type-status');
+ badge.textContent=s.pass?'設定値 PASS（画像未判定）':'設定 FAIL / UNVERIFIED';badge.className='pill '+(s.pass?'good':'warn');
+ $('#type-base').value=plan?.referencePct??100;
+ const cards=$('#type-panels');if(!p.continuity?.panels){cards.innerHTML='<div class="callout warn">コマ設計が未登録のため、サイズ統一は未確認です。</div>';}
+ else{cards.innerHTML=p.continuity.panels.map((pan,i)=>{const v=plan?.panelPct?.[i];return `<article class="type-card"><label>${i+1}コマ目｜${esc(pan.position||'位置未設定')}<input class="input" type="number" min="70" max="160" step="1" data-type-panel="${i}" value="${Number.isInteger(v)?v:''}" placeholder="比率を入力"/></label><span class="tiny">制作指定 ${Number.isInteger(v)?v+'%':'UNKNOWN'}${Number.isInteger(v)&&v!==plan.referencePct?' ／ 基準と不一致':''}</span></article>`}).join('');}
+ const seen=!!p.qa?.fileName&&availablePageImages.has(p.id),human=(p.qa?.checks||[]).includes('typeUniform');
+ $('#type-summary').textContent=`${s.pass?'設計値PASS':'設計値 FAIL/未確認'}：${s.reason}。実画像：${seen?'登録済み':'未登録'}、文字サイズ目視：${human?'チェック記録あり':'未確認'}。${s.pass&&seen&&human?'文字サイズ項目は必要条件を満たしました（画像認識ではありません）。':'このままでは文字サイズの実画像QAを合格扱いにできません。'}`;
+ $('#type-summary').className='callout '+(s.pass&&seen&&human?'good':'warn');
+}
+function renderContinuity(){
+ const p=page(),plan=p.continuity,s=continuityStatus(p);
+ $('#cont-count').textContent=s.checked+' / '+s.total;
+ $('#cont-status').textContent=s.pass?'USER-REVIEWED PASS':'UNVERIFIED';$('#cont-status').className='pill '+(s.pass?'good':'warn');
+ $('#cont-reset').disabled=p.id!=='ch04-p08';$('#cont-reset').textContent='確認チェックをリセット';
+ if(!plan){$('#cont-settings').innerHTML='<p class="desc">このページにはコマ設計がありません。現時点のv0.6試作はP08の公式テンプレートのみ提供しています。他のページを推測で自動確定しません。</p>';$('#cont-panels').innerHTML='';$('#cont-struct-result').textContent='構造LOCK：未登録';$('#cont-summary').textContent='NO SILENT PASS：対象ページの設計図が必要です';return;}
+ $('#cont-settings').innerHTML=`<div class="lines"><div><b>場所：</b>${esc(plan.scene||'UNKNOWN')}</div><div><b>座席：</b>${esc(Object.entries(plan.seats||{}).map(([k,v])=>k+' '+v).join(' ／ ')||'要登録')}</div><div><b>原稿：</b>${p.lines.length}発言／${plan.panelCount}コマ</div></div>`;
+ $('#cont-struct-result').textContent=s.pass?'構造検査：PASS（原稿順・コマ位置・尻尾対象・座席割付）':'構造検査：'+(s.issues.length?s.issues.join('／'):'PASS。ただし画像目視は未完了');
+ $('#cont-struct-result').className='callout '+(s.pass?'good':s.issues.length?'warn':'good');
+ $('#cont-panels').innerHTML=plan.panels.map((panel,i)=>{
+  const checked=new Set(panel.checks||[]),shots=panel.lineIndices.map((lineIdx,j)=>{const line=p.lines[lineIdx]||['不明','未設定'];const tail=panel.tails?.[j]||'不明';return `<div class="cont-line"><b>${esc(line[0])}</b>｜${esc(line[1])}<br><span class="tiny">尻尾 → ${esc(tail)}</span></div>`}).join('');
+  const seat=Object.entries(panel.characters||{}).map(([who,loc])=>`${esc(who)}：${esc(loc)}`).join(' ／ ');
+  const checkHtml=[['panel','コマの位置・読み順が正しい'],['tails','全吹き出しの話者・尻尾が正しい'],['spatial','人物の座席・向きが連続している']].map(([key,label])=>`<label class="checkline"><input type="checkbox" data-cont-index="${i}" data-cont-check="${key}" ${checked.has(key)?'checked':''}><span>${esc(label)}</span></label>`).join('');
+  return `<div class="cont-card"><h3>${i+1}コマ目｜${esc(panel.position||'位置未設定')}</h3><div class="readorder">読み順：${i+1} / ${plan.panels.length}</div>${shots}<p class="tiny" style="margin:9px 0 2px">人物：${seat||'UNKNOWN'}</p><p class="tiny" style="margin:5px 0 10px">構図：${esc(panel.camera||'UNKNOWN')}</p>${checkHtml}</div>`;
+ }).join('');
+ $('#cont-summary').textContent=s.pass?'連続性LOCKの構造照合、コマ内吹き出し順、全コマの目視確認が完了しました。最終公開判定はQA確認タブも必要です。':`NO SILENT PASS：構造=${s.issues.length?'FAIL':'PASS'}、画像=${s.hasImage?'登録済み':'未登録'}、目視=${s.checked}/${s.total}、吹き出し順=${bubbleOrderStatus(p).pass?'PASS':'未合格'}。`;
+ $('#cont-summary').className='callout '+(s.pass?'good':'warn');
+}
+
+let bubblePick=null;
+function explainIndex(p,idx){return p.lines[idx]?p.lines[idx][0]+'「'+p.lines[idx][1]+'」':'不明なセリフ'}
+function renderBubbleOrder(){
+ const p=page(),s=bubbleOrderStatus(p),list=$('#bubble-panels'),badge=$('#bubble-badge');
+ badge.textContent=p.id!=='ch04-p08'?'UNKNOWN':s.pass?'ORDER PASS':s.done<s.required?'UNVERIFIED':'ORDER FAIL';badge.className='pill '+(s.pass?'good':'warn');
+ $('#bubble-summary').textContent=s.pass?`コマ内順序：PASS（${s.done}/${s.required}コマ）。尻尾・人物配置は別途目視確認が必要です。`:
+  `NO SILENT PASS：${s.done}/${s.required}コマの位置指定完了。${s.results.filter(r=>r.done&&!r.pass).map(r=>'コマ'+r.panel+' '+r.reason).join('／')||s.reason}`;
+ $('#bubble-summary').className='callout '+(s.pass?'good':'warn');
+ if(p.id!=='ch04-p08'||!p.continuity){list.innerHTML='<p class="callout warn">P08専用の画像位置指定パイロットです。その他のページは未対応（UNKNOWN）。</p>';return;}
+ if(!s.required){list.innerHTML='<p class="callout">2つ以上の吹き出しがあるコマはありません。</p>';return;}
+ list.innerHTML=s.results.map(r=>{
+  const i=r.panel-1,pan=p.continuity.panels[i],spots=pan.bubbleCenters||{};
+  const rows=r.expected.map((idx,j)=>{
+   const pos=spots[idx],active=!!(bubblePick&&bubblePick.panel===i&&bubblePick.idx===idx);
+   return `<div class="bubble-row"><div class="text-part"><b>${j+1}. ${esc(explainIndex(p,idx))}</b><div class="bubble-state">${pos?`座標登録済み（X:${Math.round(pos.x*100)}% / Y:${Math.round(pos.y*100)}%）`:'位置未登録'}</div></div><div class="controls"><button type="button" class="btn secondary small ${active?'selected':''}" data-bub-select="${i}" data-bub-line="${idx}">${pos?'位置を変更':'位置を指定'}</button>${pos?`<button class="btn secondary small" data-bub-remove="${i}" data-bub-line="${idx}">消去</button>`:''}</div></div>`}).join('');
+  const cls=r.done?(r.pass?'good':'bad'):'warn';const title=r.done?(r.pass?'PASS':r.ambiguous?'要確認':'FAIL'):'UNVERIFIED';
+  return `<article class="bubble-card"><div class="bubble-card-head"><h3 class="h3" style="margin:0">${i+1}コマ目｜${esc(pan.position)}</h3><span class="pill ${cls}">${title}</span></div><p class="desc" style="margin:0">吹き出しを選択 → 下の画像の吹き出し中央をタップ。位置指定後、自動で読む順番を照合します。</p><canvas class="bubble-canvas" data-bubble-canvas="${i}" width="800" height="520" aria-label="${i+1}コマ目の画像。選択したセリフの吹き出し中央をタップしてください"></canvas><div class="bubble-instruction" id="bubble-action-${i}">${bubblePick?.panel===i?'吹き出し中央を画像上でタップしてください':'まず「位置を指定」を押してください'}</div>${rows}<div class="callout ${r.done?(r.pass?'good':'warn'):'warn'}" style="margin-top:10px">${r.reason}${r.done?'。画像の推定順：'+esc(r.obtained.map(idx=>p.lines[idx][0]).join(' → ')):''}</div></article>`;
+ }).join('');
+ drawBubbleCanvases(p);
+}
+async function drawBubbleCanvases(p){
+ if(!p.qa?.fileName)return;
+ const blob=await assetGet(qaKey(p.id));if(!blob)return;
+ const uri=createUrl(blob),img=new Image();img.onload=()=>{
+  if(page().id!==p.id)return;
+  $$('#bubble-panels canvas[data-bubble-canvas]').forEach(canvas=>{
+   if(!canvas.isConnected)return;const idx=Number(canvas.dataset.bubbleCanvas),cr=bubblePanelCrops[idx];
+   const ctx=canvas.getContext('2d');if(!cr||!ctx)return;
+   // size the bitmap to the actual crop ratio
+   let cw=Math.round(img.width*cr.w),ch=Math.round(img.height*cr.h);
+   canvas.width=800;canvas.height=Math.round(800*ch/cw);
+   ctx.clearRect(0,0,canvas.width,canvas.height);
+   ctx.drawImage(img,img.width*cr.x,img.height*cr.y,cw,ch,0,0,canvas.width,canvas.height);
+   const spots=p.continuity.panels[idx].bubbleCenters||{};
+   for(const [j,lineIdx] of p.continuity.panels[idx].lineIndices.filter(lineIdx=>p.lines[lineIdx]?.[0]!=='画面').entries()){
+    const pos=spots[lineIdx];if(!pos)continue;
+    const x=pos.x*canvas.width,y=pos.y*canvas.height;
+    ctx.beginPath();ctx.arc(x,y,17,0,2*Math.PI);ctx.fillStyle='#0b1021';ctx.fill();ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 17px system-ui';ctx.fillText(String(j+1),x,y);
+   }
+  });
+ };img.onerror=()=>{toast('漫画画像を読み込めませんでした',true)};img.src=uri;
+}
+
+// v0.9: offline workflow state / fixed regression fixtures / structured lessons.
+// Design principles inspired by LangGraph (gates), DeepEval (regressions), Langfuse (traces),
+// PydanticAI (structured input). These libraries are NOT bundled or invoked.
+const EVOLVE_STEPS=[
+ ['master','正式MASTER確認','vault'],['source','確定原稿','source'],
+ ['image','生成画像登録','qa'],['structure','連続性構造','continuity'],
+ ['bubble','コマ内吹き出し順','bubble'],['type','全文字サイズの統一','type'],['text','セリフの完全一致','qa'],
+ ['human','人間による全視覚確認','qa'],['release','公開可能条件','qa']
+];
+function workflowSnapshot(p){
+ const qa=qaStatus(p),structure=continuityStructure(p),bubbles=bubbleOrderStatus(p);
+ return {master:qa.masters,source:!!p.locked&&Array.isArray(p.lines)&&p.lines.length>0,
+ image:qa.hasImage,structure:structure.pass,bubble:bubbles.pass,type:qa.typography.pass&&qa.hasImage&&(p.qa?.checks||[]).includes('typeUniform'),
+ text:qa.text,human:qa.allChecks&&qa.continuity.visual,
+ release:qa.pass};
+}
+function internalRegressionSuite(){
+ const sample={id:'ch04-p08',lines:p08Lines,sourceLockHash:sourceHash(p08Lines),continuity:makeP08Continuity(),typography:{referencePct:100,panelPct:[100,100,100,100,100,100]},qa:{fileName:'',checks:[],textChecked:false,transcript:''},characters:['kenta','mina'],locked:true};
+ const run=(name,fn)=>{try{return {name,pass:!!fn()}}catch(e){return {name,pass:false,error:String(e.message).slice(0,180)}}};
+ const ordered=(positions)=>positions.map((pos,idx)=>({idx,pos})).sort(bubbleOrderCompare).map(x=>x.idx);
+ return [
+  run('サンプル：9発言・6コマ構造',()=>continuityStructure(sample).pass),
+  run('セリフ改変を検出',()=>{const x=clone(sample);x.lines[8][1]='不一致データ。';return !continuityStructure(x).pass}),
+  run('コマ番号の不一致を検出',()=>{const x=clone(sample);x.continuity.panels[1].number=9;return !continuityStructure(x).pass}),
+  run('話者と尻尾の不一致を検出',()=>{const x=clone(sample);x.continuity.panels[1].tails[0]='別の人物';return !continuityStructure(x).pass}),
+  run('横並び・右→左の順序を受理',()=>JSON.stringify(ordered([{x:.8,y:.2},{x:.25,y:.2}]))==='[0,1]'),
+  run('吹き出しの逆順を検出',()=>JSON.stringify(ordered([{x:.2,y:.2},{x:.8,y:.2}]))==='[1,0]'),
+  run('吹き出し位置が近いと判定保留',()=>bubbleOrderCompare({pos:{x:.5,y:.4}},{pos:{x:.51,y:.41}})===0),
+  run('画像未登録で視覚PASS禁止',()=>!continuityStatus(sample).pass&&!bubbleOrderStatus(sample).pass),
+  run('全コマ同一サイズの制作設定を受理',()=>typographyStatus(sample).pass),
+  run('コマごとのサイズ不一致を検出',()=>{const x=clone(sample);x.typography.panelPct[4]=75;return !typographyStatus(x).pass}),
+  run('文字サイズの未指定を検出',()=>{const x=clone(sample);x.typography.panelPct[2]=null;return !typographyStatus(x).pass}),
+  run('画像未確認の文字サイズは最終合格しない',()=>typographyStatus(sample).pass&&!sample.qa.checks.includes('typeUniform')&&!qaStatus(sample).pass),
+  run('吹き出し内の読み順の目視項目を必須化',()=>qaChecklist(sample).some(([id])=>id==='balloonReading')&&!qaChecklist(sample).every(([id])=>sample.qa.checks.includes(id)))
+ ];
+}
+function renderEvolution(){
+ if(!$('#evolve-flow'))return;
+ const p=page(),snap=workflowSnapshot(p),first=EVOLVE_STEPS.find(([key])=>!snap[key]);
+ $('#evolve-badge').textContent=snap.release?'QA PASS':'NO SILENT PASS';$('#evolve-badge').className='pill '+(snap.release?'good':'warn');
+ $('#evolve-next').textContent=first?`次の未完了：${first[1]}。それ以前が完了したと推測せず、証拠を確認してください。`:'全ての工程条件を満たしています（画像評価は人間による確認記録）。';
+ $('#evolve-flow').innerHTML=EVOLVE_STEPS.map(([key,name,tab],i)=>`<div class="step"><span class="number" style="background:${snap[key]?'#194d4a':'#51412b'}">${snap[key]?'✓':'!'}</span><div style="flex:1"><b>${i+1}. ${esc(name)}</b><p>${snap[key]?'必要条件を満たしました':'未確認／未完了'}</p><button class="btn secondary small" data-go="${tab}" style="margin-top:5px">確認 →</button></div></div>`).join('');
+ $('#evolve-page').innerHTML=state.pages.map(x=>`<option value="${esc(x.id)}" ${x.id===p.id?'selected':''}>${esc(x.chapter+' '+x.pageno+'「'+x.title+'」')}</option>`).join('');
+ const tests=state.regressionRuns.at(-1);if(tests){let ok=tests.tests.filter(x=>x.pass).length;$('#evolve-tests').innerHTML=`<b>${ok}/${tests.tests.length} テストPASS</b>`+tests.tests.map(t=>`<div class="step"><span class="${t.pass?'stat-ok':'stat-bad'}">${t.pass?'✓':'FAIL'}</span><span>${esc(t.name)} ${t.error?esc(t.error):''}</span></div>`).join('');$('#evolve-tests').className='callout '+(ok===tests.tests.length?'good':'warn');$('#evolve-tested-at').textContent='実行記録：'+new Date(tests.at).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+'（OS判定ロジックに対する固定テスト。実画像のQAではありません）';}
+ else{$('#evolve-tests').textContent='未実行：ボタンから固定テストを実行してください。';$('#evolve-tests').className='callout warn';$('#evolve-tested-at').textContent='';}
+ const a=state.improvementCases.slice().reverse();
+ $('#evolve-cases').innerHTML=a.length?a.map(x=>`<article class="record"><div class="between"><b>${esc(x.category)}｜${esc(x.pageId)}</b><span class="pill ${x.status==='verified'?'good':'warn'}">${x.status==='verified'?'再検証済み':'未再検証'}</span></div><div class="tiny">${esc(x.at||'')}</div><div><b>観察：</b>${esc(x.observed)}</div><div><b>期待：</b>${esc(x.expected)}</div><div><b>対策：</b>${esc(x.solution)}</div>${x.evidence?`<div><b>再検証の根拠：</b>${esc(x.evidence)}</div>`:''}${x.status!=='verified'?`<label class="field">再検証の根拠（実画像・テスト結果を具体的に）<textarea class="text-area" rows="2" data-evolve-evidence="${esc(x.id)}" maxlength="1600" placeholder="例：修正ページP08のコマ5を再確認、画像内の席と吹き出し順を確認した"></textarea></label><button class="btn small secondary" data-evolve-verify="${esc(x.id)}">根拠を保存して再検証済みにする</button>`:''}</article>`).join(''):'<p class="note">まだ改善ケースがありません。発見した不一致を1件登録すると、次の制作で参照できます。</p>';
+}
+function setupEvolution(){
+ $('#evolve-run-tests').addEventListener('click',()=>{const tests=internalRegressionSuite(),run={at:new Date().toISOString(),tests};state.regressionRuns.push(run);state.regressionRuns=state.regressionRuns.slice(-100);audit('OS回帰テスト実行',`${tests.filter(x=>x.pass).length}/${tests.length}`);save();renderEvolution();toast('固定テストを実行しました。結果をご確認ください')});
+ $('#evolve-save-case').addEventListener('click',()=>{const category=$('#evolve-category').value,pageId=$('#evolve-page').value,observed=$('#evolve-observed').value.trim(),expected=$('#evolve-expected').value.trim(),solution=$('#evolve-solution').value.trim();if(!observed||!expected||!solution||observed.length>1200||expected.length>1200||solution.length>1600||!state.pages.some(x=>x.id===pageId))return toast('観察・期待・対策の3つを記入してください',true);state.improvementCases.push({id:newId(),category,pageId,observed,expected,solution,evidence:'',status:'pending',at:new Date().toISOString()});state.improvementCases=state.improvementCases.slice(-1000);audit('改善ケース登録',pageId+' '+category);save();for(const id of ['evolve-observed','evolve-expected','evolve-solution'])$('#'+id).value='';renderEvolution();toast('未再検証の改善ケースとして保存しました')});
+ $('#evolve-cases').addEventListener('click',e=>{const b=e.target.closest('[data-evolve-verify]');if(!b)return;const x=state.improvementCases.find(x=>x.id===b.dataset.evolveVerify);if(!x)return;const evidence=$(`[data-evolve-evidence="${CSS.escape(x.id)}"]`)?.value?.trim()||'';if(evidence.length<15||evidence.length>1600)return toast('何を再検証したか、15文字以上で記録してください',true);if(!confirm('実際の修正結果を確認済みですか？ これは自己申告の記録で、AI画像検査ではありません。'))return;x.evidence=evidence;x.status='verified';x.verifiedAt=new Date().toISOString();audit('改善ケース再検証済み',x.id);save();renderEvolution();toast('確認根拠を保存しました')});
+}
+
+async function render(){revokeUrls();await syncEvidence();renderSelects();renderHome();await renderVault();renderSource();renderQa();renderContinuity();renderBubbleOrder();renderTypography();renderEvolution();renderExtras()}
+function handlers(){
+ $('#char-create').addEventListener('click',async()=>{const name=$('#char-new-name').value.trim(),canon=$('#char-new-canon').value.trim();if(name.length<1||name.length>70||canon.length<2||canon.length>2000)return toast('名前70文字以内、人物設定2〜2000文字を入力してください',true);if(state.characters.some(c=>c.name===name))return toast('同名のキャラクターは登録済みです',true);const id='char-'+newId().replace(/[^A-Za-z0-9_-]/g,'');state.characters.push({id,name,label:name,canon,verified:false,fileName:'',confirmedAt:''});audit('新規キャラクター追加',name);save();$('#char-new-name').value='';$('#char-new-canon').value='';await render();toast('新規キャラクターを登録しました（MASTERは未承認）')});
+ $('#workspace-save').addEventListener('click',()=>{const name=$('#workspace-name').value.trim();if(name.length<1||name.length>100)return toast('作品名は1〜100文字にしてください',true);state.settings.projectName=name;audit('ワークスペース名変更',name);save();renderWorkspace();toast('作品名を更新しました')});
+ $('#audit-export').addEventListener('click',()=>downloadCsv('creator-audit-log.csv',['UTC日時','操作','対象'],state.auditEvents.map(x=>[x.at,x.action,x.details])));
+ $$('[data-tab]').forEach(x=>x.addEventListener('click',()=>setTab(x.dataset.tab)));
+ document.body.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)setTab(b.dataset.go)});
+ $('#char-grid').addEventListener('change',async e=>{const up=e.target.closest('[data-upload]');const checkbox=e.target.closest('[data-confirm]');if(up){let ch=state.characters.find(x=>x.id===up.dataset.upload);let file=up.files?.[0];if(!file)return;if(!(await validImage(file))){toast('20MB以内のPNG/JPEG/WebP/GIF画像を指定してください',true);return}try{await assetSet(assetKey(ch.id),file);ch.fileName=file.name;ch.verified=false;ch.confirmedAt='';for(const p of state.pages.filter(p=>p.characters?.includes(ch.id))){p.qa.checks=[];p.qa.textChecked=false;invalidateContinuity(p);}audit('MASTER画像更新・関連QA失効',ch.name);save();await render();toast('画像登録済み。正式MASTERなら明示的に承認してください。')}catch(err){console.error(err);toast('画像の保存に失敗しました',true)} } else if(checkbox){let ch=state.characters.find(x=>x.id===checkbox.dataset.confirm);if(!ch)return;const blob=await assetGet(assetKey(ch.id));if(!blob){toast('先に画像を登録してください',true);checkbox.checked=false;return}ch.verified=checkbox.checked;ch.confirmedAt=checkbox.checked?new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'}):'';audit(ch.verified?'MASTER承認':'MASTER承認解除',ch.name);save();await render();toast(ch.verified?ch.name+'のユーザー承認を記録しました':ch.name+'の承認を解除しました')}});
+ for(const id of ['source-page','qa-page'])$('#'+id).addEventListener('change',async e=>{state.selectedPage=e.target.value;save();await render()});
+ $('#save-scene-notes').addEventListener('click',()=>{page().sceneNotes=$('#scene-notes').value;save();toast('制作メモを保存しました')});
+ $('#create-page').addEventListener('click',async()=>{let chapter=$('#new-chapter').value.trim(),number=$('#new-pageno').value.trim(),title=$('#new-title').value.trim(),raw=$('#new-lines').value.trim(),chars=$$('input[name=newcharacter]:checked').map(c=>c.value),constraints=$('#new-constraints').value.trim();if(!chapter||!number||!title||!raw||chars.length===0||!constraints){toast('章、ページ、タイトル、登場人物、確定セリフ、制約を入力してください',true);return}let lines=raw.replace(/\r/g,'').split('\n').filter(Boolean).map(l=>{let i=l.indexOf('｜');return i>=0?[l.slice(0,i),l.slice(i+1)]:null});if(lines.some(x=>!x||!x[0]||!x[1])){toast('各行を「話者｜セリフ」で入力してください',true);return}const id='page-'+Date.now();state.pages.push({id,chapter,pageno:number,title,characters:chars,locked:true,lines,constraints,sceneNotes:'',qa:{transcript:'',checks:[],fileName:'',textChecked:false}});state.selectedPage=id;audit('原稿LOCK新規登録',chapter+' '+number+' '+title);save();await render();setTab('source');toast('確定原稿を新規登録しました')});
+  setupEvolution();
+  $('#type-page').addEventListener('change',async e=>{state.selectedPage=e.target.value;save();await render();});
+  $('#type-apply').addEventListener('click',()=>{const p=page(),value=Number($('#type-base').value);if(!Number.isInteger(value)||value<70||value>160||!p.continuity?.panels?.length)return toast('基準倍率を70〜160%で設定してください',true);p.typography={referencePct:value,panelPct:p.continuity.panels.map(()=>value)};
+    // 視覚検査記録は実画像を変えない限り維持。設計値変更後は確認し直す。
+    p.qa.checks=(p.qa.checks||[]).filter(id=>id!=='typeUniform');audit('全コマ文字サイズ一括設定',p.id+' '+value+'%');save();renderTypography();renderQa();renderHome();renderEvolution();toast('全コマの制作設定を統一しました。実画像の確認は別途必要です');});
+  $('#type-panels').addEventListener('change',e=>{const el=e.target.closest('[data-type-panel]');if(!el)return;const p=page(),idx=Number(el.dataset.typePanel),val=Number(el.value);if(!p.continuity?.panels?.[idx]||!Number.isInteger(val)||val<70||val>160){toast('文字サイズは70〜160%の整数にしてください',true);renderTypography();return;}if(!p.typography)p.typography=makeTypographyPlan(p);p.typography.panelPct[idx]=val;p.qa.checks=(p.qa.checks||[]).filter(id=>id!=='typeUniform');audit('コマ別文字サイズ設定',p.id+' コマ'+(idx+1)+' '+val+'%');save();renderTypography();renderQa();renderHome();renderEvolution();});
+  $('#bubble-page').addEventListener('change',async e=>{state.selectedPage=e.target.value;bubblePick=null;save();await render()});
+
+  $('#bubble-panels').addEventListener('click',e=>{
+   const select=e.target.closest('[data-bub-select]'),remove=e.target.closest('[data-bub-remove]'),canvas=e.target.closest('canvas[data-bubble-canvas]');
+   if(select){bubblePick={panel:Number(select.dataset.bubSelect),idx:Number(select.dataset.bubLine)};renderBubbleOrder();return;}
+   if(remove){const i=Number(remove.dataset.bubRemove),idx=Number(remove.dataset.bubLine),pan=page().continuity?.panels?.[i];if(!pan)return;delete pan.bubbleCenters?.[idx];bubblePick=null;audit('吹き出し位置を消去','コマ'+(i+1)+' 原稿'+(idx+1));save();renderBubbleOrder();renderContinuity();renderHome();renderQa();return;}
+   if(canvas){const i=Number(canvas.dataset.bubbleCanvas),pan=page().continuity?.panels?.[i];if(!pan||!bubblePick||bubblePick.panel!==i){toast('先に配置したいセリフの「位置を指定」を押してください',true);return;}
+    const rect=canvas.getBoundingClientRect();const x=Math.min(1,Math.max(0,(e.clientX-rect.left)/rect.width));const y=Math.min(1,Math.max(0,(e.clientY-rect.top)/rect.height));
+    if(!pan.bubbleCenters)pan.bubbleCenters={};pan.bubbleCenters[bubblePick.idx]={x,y};
+    audit('吹き出し位置登録',page().id+' コマ'+(i+1)+' 原稿'+(bubblePick.idx+1));bubblePick=null;save();renderBubbleOrder();renderContinuity();renderHome();renderQa();return;
+   }
+  });
+  $('#continuity-page').addEventListener('change',async e=>{state.selectedPage=e.target.value;save();await render()});
+  $('#cont-panels').addEventListener('change',e=>{const el=e.target,idx=Number(el.dataset.contIndex),key=el.dataset.contCheck;if(!Number.isInteger(idx)||!['panel','tails','spatial'].includes(key))return;const p=page(),pan=p.continuity?.panels?.[idx];if(!pan)return;if(!p.qa?.fileName||!availablePageImages.has(p.id)){el.checked=false;toast('先にQA確認タブで完成画像を登録してください',true);return;}let values=new Set(pan.checks||[]);if(el.checked)values.add(key);else values.delete(key);pan.checks=[...values];audit('連続性目視検証',p.id+' コマ'+(idx+1)+' '+key+'='+el.checked);save();renderContinuity();renderHome();renderQa();});
+  $('#cont-reset').addEventListener('click',()=>{const p=page();if(p.id!=='ch04-p08')return;if(!confirm('連続性の目視チェックを未検証に戻します。構図設定は維持します。続けますか？'))return;p.continuity.panels.forEach(panel=>panel.checks=[]);p.typography=makeTypographyPlan(p);p.qa.checks=(p.qa.checks||[]).filter(id=>id!=='typeUniform');audit('連続性テンプレート再設定',p.id);save();renderContinuity();renderBubbleOrder();renderTypography();renderHome();renderQa();toast('チェックをリセットしました（目視確認は未検証）');});
+ $('#qa-transcript').addEventListener('input',e=>{let p=page();p.qa.transcript=e.target.value;p.qa.textChecked=false;save();const c=compareTranscript(p);$('#qa-text-result').innerHTML=textComparisonHTML(c);$('#qa-text-result').className='callout warn';renderHome();renderQa()});
+ $('#check-text').addEventListener('click',()=>{let p=page();p.qa.transcript=$('#qa-transcript').value;p.qa.textChecked=true;let c=compareTranscript(p);audit('セリフ文字列照合',p.id+' '+(c.pass?'PASS':'FAIL'));save();renderQa();toast(c.pass?'セリフが厳密一致しました':'セリフの不一致または未入力があります',!c.pass)});
+ $('#qa-file').addEventListener('change',async e=>{let file=e.target.files?.[0];if(!file)return;let p=page();if(!(await validImage(file))){toast('20MB以内のPNG/JPEG/WebP/GIF画像を指定してください',true);return}try{await assetSet(qaKey(p.id),file);p.qa.fileName=file.name;p.qa.checks=[];p.qa.textChecked=false;invalidateContinuity(p);audit('QA画像差替え・照合失効',p.id);save();await render();toast('画像を登録しました。目視チェックはリセットされました。')}catch(err){toast('ページ画像の保存に失敗しました',true)}});
+ $('#qa-checks').addEventListener('change',e=>{let id=e.target.dataset.qaCheck;if(!id)return;let p=page(),arr=new Set(p.qa.checks||[]);if(e.target.checked)arr.add(id);else arr.delete(id);p.qa.checks=[...arr];let s=qaStatus(p);audit('QA目視確認更新',p.id+' '+(s.pass?'PASS':'未検証'));save();renderHome();renderQa()});
+ $('#add-issue').addEventListener('click',()=>{const issue=$('#qa-issue').value.trim();if(!issue){toast('改善内容を入力してください',true);return}const p=page();if(!Array.isArray(p.qa.issues))p.qa.issues=[];p.qa.issues.push({at:new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'}),text:issue});audit('改善履歴追加',p.id);save();$('#qa-issue').value='';renderQa();toast('改善履歴を登録しました')});
+ $('#qa-save').addEventListener('click',()=>{let p=page();p.qa.transcript=$('#qa-transcript').value;save();renderHome();renderQa();toast(qaStatus(p).pass?'ユーザー確認済みとして記録しました':'未検証の項目が残っています')});
+ $('#export-btn').addEventListener('click',exportBackup);$('#restore-btn').addEventListener('click',restoreBackup);
+}
+async function blobToBase64(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(blob)})}
+async function base64ToBlob(s,type){let raw=atob(s);let array=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)array[i]=raw.charCodeAt(i);return new Blob([array],{type:type||'application/octet-stream'})}
+async function exportBackup(){try{let data={type:'mirror_factory_os_backup',exportedAt:new Date().toISOString(),state:clone(state),assets:{}};let keys=[...state.characters.map(c=>assetKey(c.id)),...state.pages.map(p=>qaKey(p.id))];for(const key of keys){let blob=await assetGet(key);if(blob)data.assets[key]={type:blob.type,size:blob.size,sha256:await sha256(blob),content:await blobToBase64(blob)}}let file=new Blob([JSON.stringify(data)],{type:'application/json'});let url=URL.createObjectURL(file);let a=document.createElement('a');a.href=url;a.download=(CREATOR_EDITION?'creator':'mirror')+'-factory-v09-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);state.settings.lastBackupExportAt=new Date().toISOString();audit('バックアップ書出操作',String(keys.length)+'件の画像候補');save();renderHome();toast('ダウンロードを開始しました。端末の保存先をご確認ください')}catch(e){console.error(e);toast('バックアップを保存できませんでした',true)}}
+function validateState(s){
+ if(!s||!['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9'].includes(s.version)||!Array.isArray(s.characters)||!Array.isArray(s.pages)||!s.characters.length||!s.pages.length||s.characters.length>300||s.pages.length>3000)throw Error('人物・ページ数が不正です');
+ const idok=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(x);
+ const str=(x,max)=>typeof x==='string'&&x.length<=max;
+ const charIds=new Set();const pageIds=new Set();
+ for(const c of s.characters){if(!c||!idok(c.id)||charIds.has(c.id)||!str(c.name,150)||!str(c.canon,20000)||!str(c.fileName||'',500))throw Error('キャラクター形式が不正です');charIds.add(c.id)}
+ for(const p of s.pages){if(!p||!idok(p.id)||pageIds.has(p.id)||!str(p.chapter,200)||!str(p.pageno,120)||!str(p.title,250)||!Array.isArray(p.characters)||p.characters.length<1||p.characters.length>50||p.characters.some(id=>!charIds.has(id))||!Array.isArray(p.lines)||p.lines.length<1||p.lines.length>400||p.lines.some(line=>!Array.isArray(line)||line.length!==2||!str(line[0],100)||!str(line[1],10000))||!str(p.constraints||'',25000)||!p.qa||typeof p.qa!=='object'||!str(p.qa.transcript||'',200000)||!Array.isArray(p.qa.checks)||p.qa.checks.length>50)throw Error('原稿形式が不正です');pageIds.add(p.id)}
+  for(const p of s.pages){const ty=p.typography;if(ty!==undefined&&(!ty||!Number.isInteger(ty.referencePct)||ty.referencePct<70||ty.referencePct>160||!Array.isArray(ty.panelPct)||ty.panelPct.length>12||ty.panelPct.some(x=>!Number.isInteger(x)||x<70||x>160)))throw Error('文字サイズLOCKの形式が不正です');const c=p.continuity;if(c!==undefined){if(!c||typeof c!=='object'||!Array.isArray(c.panels)||c.panels.length>12||!Number.isInteger(c.panelCount)||c.panels.some(x=>!x||!Array.isArray(x.checks)||x.checks.length>10||!Array.isArray(x.lineIndices)||x.lineIndices.length>400||x.lineIndices.some(y=>!Number.isInteger(y))||!Array.isArray(x.tails)||x.tails.length>400||typeof x.camera!=='string'||x.camera.length>5000))throw Error('連続性QA形式が不正です');}} 
+ if(!pageIds.has(s.selectedPage))s.selectedPage=s.pages[0].id;
+ if(s.improvementCases!==undefined&&(!Array.isArray(s.improvementCases)||s.improvementCases.length>4000||s.improvementCases.some(x=>!x||typeof x!=='object'||!str(x.observed,1200)||!str(x.expected,1200)||!str(x.solution,1600)||!str(x.category,30)||!str(x.pageId,100)||!str(x.status,25)||!str(x.evidence||'',1600))))throw Error('改善記録が不正です');
+ if(s.regressionRuns!==undefined&&(!Array.isArray(s.regressionRuns)||s.regressionRuns.length>200||s.regressionRuns.some(x=>!x||!str(x.at,100)||!Array.isArray(x.tests)||x.tests.length>40)))throw Error('回帰テスト履歴が不正です');
+ for(const [field,max] of [['workLogs',20000],['posts',20000],['sales',20000],['auditEvents',4000]]){if(s[field]!==undefined&&(!Array.isArray(s[field])||s[field].length>max))throw Error(field+' の形式が不正です')}
+ for(const p of s.posts||[]){if(!p||typeof p!=='object'||!str(p.title,500)||!Array.isArray(p.channels)||p.channels.length>12||!str(p.status,25)||!str(p.schedule||'',100)||!str(p.url||'',2500))throw Error('投稿台帳の形式が不正です')}
+ for(const l of s.workLogs||[]){if(!l||typeof l!=='object'||!Number.isFinite(Number(l.minutes))||!Number.isFinite(Number(l.attempts)))throw Error('制作ログの形式が不正です')}
+ for(const sale of s.sales||[]){if(!sale||!['sale','cost'].includes(sale.kind)||!Number.isFinite(Number(sale.amount))||!str(sale.label,500))throw Error('売上の形式が不正です')}
+ return s;
+}
+async function preflightBackup(f){
+ if(f.size>160*1024*1024)throw Error('バックアップファイルは160MB以内にしてください');
+ const backup=JSON.parse(await f.text());if(backup.type!=='mirror_factory_os_backup'||!backup.state)throw Error('MIRROR形式ではありません');
+ const incoming=validateState(backup.state),items=[],keys=new Set([...incoming.characters.map(c=>assetKey(c.id)),...incoming.pages.map(p=>qaKey(p.id))]);
+ if(backup.assets&&typeof backup.assets!=='object')throw Error('画像データの形式が不正です');
+ let total=0;
+ for(const [key,value] of Object.entries(backup.assets||{})){
+  if(!keys.has(key)||!value||typeof value.content!=='string'||value.content.length>28*1024*1024||!ACCEPTED_IMAGE_TYPES.has(value.type))throw Error('予期しない画像／形式です');
+  const blob=await base64ToBlob(value.content,value.type);if(!await validImage(blob))throw Error('画像の内容が不正です');
+  if(value.size!==undefined&&blob.size!==value.size)throw Error('画像サイズの検証に失敗しました');
+  if(value.sha256&&value.sha256!==await sha256(blob))throw Error('画像ハッシュが一致しません');
+  total+=blob.size;if(total>140*1024*1024)throw Error('画像データが大きすぎます');items.push([key,blob]);
+ }
+ return {incoming,items};
+}
+async function restoreBackup(){let f=$('#restore-file').files?.[0];if(!f){toast('先にJSONファイルを選んでください',true);return}
+ try{const {incoming,items}=await preflightBackup(f),oldState=state,oldItems=[];
+  const info=`復元する内容：人物 ${incoming.characters.length}名、原稿 ${incoming.pages.length}ページ、画像 ${items.length}件。\n現在のデータを上書きします。元に戻すには別途バックアップが必要です。続けますか？`;
+  if(!confirm(info))return;
+  const oldKeys=[...oldState.characters.map(c=>assetKey(c.id)),...oldState.pages.map(p=>qaKey(p.id))];for(const key of oldKeys){let img=await assetGet(key);if(img)oldItems.push([key,img])}
+  await assetReplaceAll(items);
+  state=incoming;migrateExtras();audit('バックアップ復元',`原稿${incoming.pages.length}件・画像${items.length}件`);
+  if(!save()){state=oldState;await assetReplaceAll(oldItems);throw Error('テキストデータの保存に失敗しました')}
+  await render();setTab('home');toast('検証済みバックアップを復元しました');
+ }catch(e){console.error(e);toast('復元できません：'+(e.message||'形式を確認'),true)}
+}
+
+const POST_STATUSES={idea:'企画中',draft:'制作中',scheduled:'外部予約済み（手入力）',published:'公開済み（手入力）',failed:'投稿エラー'};
+const WORK_STAGES={script:'原稿・構成',image:'画像制作',qa:'QA・修正',motion:'動画制作',post:'投稿準備'};
+const WORK_RESULTS={pass:'PASS／完了',fail:'FAIL／要改善',progress:'作業中'};
+const METRIC_KEYS=['views','likes','saves','follows','clicks','comments'];
+const JST_DAY=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const formatInt=n=>Number(n||0).toLocaleString('ja-JP');
+const newId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+const isExternalState=x=>['scheduled','published'].includes(x);
+const safeUrl=x=>/^https?:\/\//i.test(String(x||''))?x:'';
+const metricVal=x=>x===null||x===undefined||x===''?'—':formatInt(x);
+const m0=x=>Number.isFinite(Number(x))&&Number(x)>=0?Number(x):0;
+function optionsForPages(includeBlank=false){return (includeBlank?'<option value="">独立作品・ページ未連携</option>':'')+state.pages.map(p=>`<option value="${esc(p.id)}">${esc(p.chapter+' '+p.pageno+' '+p.title)}</option>`).join('')}
+function resetOptions(sel,html){const prev=sel.value;sel.innerHTML=html;if([...sel.options].some(o=>o.value===prev))sel.value=prev;}
+function pageById(id){return state.pages.find(p=>p.id===id)}
+function renderExtras(){renderWork();renderPosts();renderGrowth();}
+function renderWork(){
+ resetOptions($('#work-page'),optionsForPages());
+ let logs=state.workLogs,minutes=logs.reduce((s,l)=>s+m0(l.minutes),0),attempts=logs.reduce((s,l)=>s+m0(l.attempts),0),fails=logs.filter(x=>x.result==='fail').length;
+ $('#work-metrics').innerHTML=[['記録回数',logs.length,'回'],['実作業時間',Math.round(minutes/6)/10,'時間'],['制作試行',attempts,'回'],['FAIL記録',fails,'回']].map(x=>`<div class="mini-metric"><div class="tiny">${x[0]}</div><b>${formatInt(x[1])}<small style="font-size:11px;font-weight:500"> ${x[2]}</small></b></div>`).join('');
+ let p=pageById($('#work-page').value)||page(),s=qaStatus(p),g=masterGates(p);
+ $('#work-gates').innerHTML=[['原稿SOURCE LOCK',p.locked&&p.lines.length>0],['正式MASTER承認',g.length>0&&g.every(x=>x.ok)],['セリフ完全一致',s.text],['生成画像確認',s.hasImage],['目視QA',s.allChecks]].map(([name,ok])=>`<div class="step"><span class="status-icon ${ok?'good-text':'warning-label'}">${ok?'✓':'!'}</span><div><b>${esc(name)}</b><p>${ok?'条件を満たしています':'未検証／未完了'}</p></div></div>`).join('');
+ $('#work-list').innerHTML=logs.length?logs.slice().reverse().slice(0,150).map(l=>{const p=pageById(l.pageId);return `<div class="record"><div class="between"><b>${esc(p?p.chapter+' '+p.pageno:'関連ページ不明')}｜${esc(WORK_STAGES[l.stage]||l.stage)}</b><span class="status-chip ${l.result==='pass'?'complete':l.result==='fail'?'failed':''}">${esc(WORK_RESULTS[l.result]||l.result)}</span></div><div class="tiny">${esc(l.date)}　${formatInt(l.minutes)}分 / ${formatInt(l.attempts)}試行</div><div class="muted-strong" style="font-size:12px">${esc(l.note||'改善メモなし')}</div><button class="btn small secondary" data-remove-work="${esc(l.id)}">削除</button></div>`}).join(''):'<div class="empty">まず1件の制作記録を登録しましょう。試行錯誤が改善資産になります。</div>';
+}
+function renderPosts(){
+ resetOptions($('#post-page'),optionsForPages(true));
+ const ss={idea:0,draft:0,scheduled:0,published:0,failed:0};state.posts.forEach(p=>{if(p.status in ss)ss[p.status]++});
+ $('#post-stats').innerHTML=[['投稿台帳',state.posts.length],['企画・制作',ss.idea+ss.draft],['外部予約済み',ss.scheduled],['エラー',ss.failed]].map(([name,n])=>`<div class="mini-metric"><div class="tiny">${name}</div><b>${formatInt(n)}</b></div>`).join('');
+ const filter=$('#post-filter').value;
+ const list=state.posts.filter(p=>filter==='all'||p.status===filter).slice().sort((a,b)=>String(b.schedule||b.created).localeCompare(String(a.schedule||a.created)));
+ $('#post-list').innerHTML=list.length?list.map(p=>{const linked=pageById(p.pageId);let quality=linked?qaStatus(linked).pass?'QA:PASS':'QA:UNVERIFIED':p.manualQa?'自主確認済み':'QA:UNKNOWN';return `<article class="record"><div class="between"><div><div class="kicker">${esc((p.channels||[]).join(' / '))}</div><b>${esc(p.title)}</b><div class="tiny">予定：${esc(p.schedule||'未設定')}　|　${esc(quality)}</div></div><span class="status-chip ${p.status==='published'?'complete':p.status==='failed'?'failed':p.status==='scheduled'?'scheduled':''}">${esc(POST_STATUSES[p.status]||'不明')}</span></div><div class="muted" style="font-size:12px;margin:7px 0;white-space:pre-wrap">${esc(p.note||'')}</div>${safeUrl(p.url)?`<a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer" style="font-size:12px">外部URLを開く ↗</a>`:''}<div class="quick-row" style="margin-top:10px"><button class="btn secondary small" data-set-post="${esc(p.id)}" data-post-state="draft">制作中</button><button class="btn secondary small" data-set-post="${esc(p.id)}" data-post-state="scheduled">予約確認</button><button class="btn secondary small" data-set-post="${esc(p.id)}" data-post-state="published">公開確認</button><button class="btn secondary small" data-set-post="${esc(p.id)}" data-post-state="failed">エラー記録</button><button class="btn danger small" data-remove-post="${esc(p.id)}">削除</button></div></article>`}).join(''):'<div class="empty">投稿計画がまだありません。制作・QAから投稿台帳へつないでいきましょう。</div>';
+}
+function renderGrowth(){
+ resetOptions($('#metric-post'),'<option value="">作品を選択</option>'+state.posts.map(p=>`<option value="${esc(p.id)}">${esc(p.title.slice(0,48)+' ['+p.channels.join('/')+']')}</option>`).join(''));
+ let ids=state.posts.filter(p=>p.metrics&&p.metrics.updatedAt),sum=k=>ids.reduce((n,p)=>n+(typeof p.metrics[k]==='number'?p.metrics[k]:0),0),counts=k=>ids.filter(p=>typeof p.metrics[k]==='number').length;
+ $('#growth-metrics').innerHTML=[['再生合計',sum('views'),'件入力 '+counts('views')],['フォロー増',sum('follows'),'件入力 '+counts('follows')],['note流入',sum('clicks'),'件入力 '+counts('clicks')],['実績入力済み',ids.length,'投稿中 '+state.posts.length]].map(([name,n,sub])=>`<div class="mini-metric"><div class="tiny">${name}</div><b>${formatInt(n)}</b><div class="tiny">${esc(sub)}</div></div>`).join('');
+ const ready=ids.filter(p=>typeof p.metrics.views==='number'&&p.metrics.views>=50),sorted=ready.slice().sort((a,b)=>(b.metrics.views||0)-(a.metrics.views||0));
+ $('#growth-rank').innerHTML=sorted.length?sorted.slice(0,8).map((p,i)=>`<div class="record"><div class="between"><b style="font-size:12px">${i+1}. ${esc(p.title)}</b><span class="tiny">${formatInt(p.metrics.views)}再生</span></div><div class="barline" style="margin:9px 0"><i style="width:${Math.max(2,Math.round(p.metrics.views/(sorted[0].metrics.views||1)*100))}%"></i></div><div class="tiny">フォロー ${metricVal(p.metrics.follows)} / note流入 ${metricVal(p.metrics.clicks)}　（登録値）</div></div>`).join(''):'<div class="empty">比較できるデータはまだありません。再生50回以上の作品から仮比較を表示します。50回は便宜的な表示閾値で、統計的な有意性は意味しません。</div>';
+ let advice=[];
+ if(ids.length<3)advice.push('まず3本以上に再生数・フォロー増・note流入を記録。比較の土台を作る。');
+ else {
+  const f=ids.filter(p=>typeof p.metrics.follows==='number'&&typeof p.metrics.views==='number');
+  const c=ids.filter(p=>typeof p.metrics.clicks==='number'&&typeof p.metrics.views==='number');
+  if(f.length&&f.reduce((n,p)=>n+p.metrics.views,0)>0&&f.reduce((n,p)=>n+p.metrics.follows,0)/f.reduce((n,p)=>n+p.metrics.views,0)<.005)advice.push('再生からフォローへの移行が少ない可能性。動画末尾の次回予告を1点だけ変えて比較する。');
+  if(c.length&&c.reduce((n,p)=>n+p.metrics.views,0)>0&&c.reduce((n,p)=>n+p.metrics.clicks,0)/c.reduce((n,p)=>n+p.metrics.views,0)<.005)advice.push('note流入が少ない可能性。プロフィール導線と続きを読みたくなる引きを小さく比較する。');
+  if(sorted.length){advice.push('再生数上位「'+sorted[0].title+'」の題材を分析。新作では冒頭・台詞の一要素だけを変えて検証する。')}
+ }
+ if(!advice.length)advice.push('複数の作品を同条件で検証し、仮説→1点改善→再測定を続ける。');
+ $('#growth-suggestions').innerHTML=advice.map((x,i)=>`<div class="step"><span class="number">${i+1}</span><p style="font-size:12px">${esc(x)}</p></div>`).join('')+'<p class="helper">この提案は入力値に基づく簡易ルールであり、AIの予測や因果関係の証明ではありません。</p>';
+ renderRevenue();
+}
+function renderRevenue(){
+ let month=$('#revenue-month').value||JST_DAY().slice(0,7),ledger=state.sales.filter(x=>String(x.day||'').startsWith(month)),gross=ledger.filter(x=>x.kind==='sale').reduce((a,b)=>a+m0(b.amount),0),cost=ledger.filter(x=>x.kind==='cost').reduce((a,b)=>a+m0(b.amount),0),profit=gross-cost,goal=m0(state.settings.monthlyGoal);
+ $('#revenue-goal').value=goal;
+ $('#revenue-summary').innerHTML=`<div class="mini-grid" style="grid-template-columns:repeat(2,1fr)"><div class="mini-metric"><div class="tiny">確定売上</div><b>¥${formatInt(gross)}</b></div><div class="mini-metric"><div class="tiny">記録された経費</div><b>¥${formatInt(cost)}</b></div><div class="mini-metric"><div class="tiny">差引（記録分のみ）</div><b>¥${formatInt(profit)}</b></div><div class="mini-metric"><div class="tiny">実取引の入力</div><b>${ledger.length}件</b></div></div>`;
+ $('#revenue-progress').innerHTML=goal?`<div class="between"><span class="tiny">目標売上への進捗</span><b>${(100*gross/goal).toFixed(1)}%</b></div><div class="progress" style="margin-top:7px"><span style="width:${Math.min(100,100*gross/goal)}%"></span></div><p class="helper">目標値は達成保証ではありません。差引も、登録した経費のみの概算です。</p>`:'<p class="helper">目標未設定です。</p>';
+ $('#revenue-list').innerHTML=ledger.length?ledger.slice().reverse().map(x=>`<div class="record"><div class="between"><b style="font-size:12px">${esc(x.label)}</b><span class="${x.kind==='sale'?'good-text':'warning-label'}">${x.kind==='sale'?'+':'−'}¥${formatInt(x.amount)}</span></div><div class="tiny">${esc(x.day)} / ${x.kind==='sale'?'確定売上':'実経費'}</div><button class="btn secondary small" data-remove-sale="${esc(x.id)}">削除</button></div>`).join(''):'<div class="empty">この月の実売上・経費はまだ登録されていません。</div>';
+}
+function numOrNull(id){const el=$('#'+id);if(el.value.trim()==='')return null;const n=Number(el.value);if(!Number.isInteger(n)||n<0||n>1000000000)throw Error('数値が不正です');return n}
+function csvValue(x){let s=String(x??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
+function downloadCsv(filename,head,items){const text=[head,...items].map(row=>row.map(csvValue).join(',')).join('\r\n');const blob=new Blob(['\ufeff'+text],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1800)}
+function setupExtras(){
+ $('#work-page').addEventListener('change',renderWork);
+ $('#work-add').addEventListener('click',()=>{
+  const pid=$('#work-page').value,minutes=Number($('#work-minutes').value),attempts=Number($('#work-attempts').value);
+  if(!pageById(pid)||!Number.isInteger(minutes)||minutes<1||minutes>1440||!Number.isInteger(attempts)||attempts<1||attempts>100)return toast('ページ・作業分数・試行回数を確認してください',true);
+  state.workLogs.push({id:newId(),pageId:pid,stage:$('#work-stage').value,result:$('#work-result').value,minutes,attempts,note:$('#work-note').value.trim(),date:new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})});
+  $('#work-note').value='';save();renderWork();toast('制作履歴を保存しました');
+ });
+ $('#work-list').addEventListener('click',e=>{const b=e.target.closest('[data-remove-work]');if(!b)return;if(!confirm('この制作記録を削除しますか？'))return;state.workLogs=state.workLogs.filter(x=>x.id!==b.dataset.removeWork);save();renderWork()});
+ $('#work-export-csv').addEventListener('click',()=>downloadCsv('mirror-worklog.csv',['日時','ページID','工程','結果','時間(分)','試行数','メモ'],state.workLogs.map(x=>[x.date,x.pageId,x.stage,x.result,x.minutes,x.attempts,x.note])));
+ $('#post-add').addEventListener('click',()=>{
+  const title=$('#post-title').value.trim(),channels=$$('#post-channels input:checked').map(x=>x.value),status=$('#post-status').value,schedule=$('#post-datetime').value,pageId=$('#post-page').value,linked=pageById(pageId),manQA=$('#post-human-qa').checked,confirmExternal=$('#post-external-confirm').checked,url=$('#post-url').value.trim();
+  if(!title||!channels.length)return toast('タイトルと配信媒体を選択してください',true);
+  if(url&&!safeUrl(url))return toast('外部URLは http(s) だけを入力してください',true);
+  if(isExternalState(status)&&!schedule)return toast('外部予約済み・公開済みには日時が必要です',true);
+  if(isExternalState(status)&&!confirmExternal)return toast('外部SNSで実際に確認した場合のみ登録できます',true);
+  if(isExternalState(status)&&!(linked?qaStatus(linked).pass:manQA))return toast('QA未承認のため外部予約・公開済みにはできません',true);
+  const clash=state.posts.find(x=>x.title===title&&channels.some(y=>x.channels?.includes(y))&&x.schedule?.slice(0,10)===(schedule||'').slice(0,10)&&schedule);
+  if(clash&&!confirm('同一タイトル・同一日・同一SNSの計画があります。重複して登録しますか？'))return;
+  state.posts.push({id:newId(),title,channels,status,schedule,pageId,manualQa:manQA,externalConfirmed:confirmExternal,note:$('#post-note').value.trim(),url,metrics:{},created:new Date().toISOString()});
+  for(let id of ['post-title','post-datetime','post-note','post-url'])$('#'+id).value='';$$('#post-channels input:checked').forEach(el=>el.checked=false);$('#post-human-qa').checked=false;$('#post-external-confirm').checked=false;$('#post-status').value='idea';save();renderPosts();renderGrowth();toast('投稿台帳に登録しました（外部には送信していません）');
+ });
+ $('#post-filter').addEventListener('change',renderPosts);
+ $('#post-list').addEventListener('click',e=>{
+  const del=e.target.closest('[data-remove-post]');if(del){if(!confirm('この投稿記録と入力済みの成果指標を削除しますか？'))return;state.posts=state.posts.filter(x=>x.id!==del.dataset.removePost);save();renderPosts();renderGrowth();return}
+  const b=e.target.closest('[data-set-post]');if(!b)return;const p=state.posts.find(x=>x.id===b.dataset.setPost);if(!p)return;const next=b.dataset.postState;if(next===p.status)return;
+  if(isExternalState(next)){
+    if(!(p.pageId?qaStatus(pageById(p.pageId)).pass:p.manualQa))return toast('QA未承認です。公開済みへ変更できません',true);
+    if(!confirm('外部SNS・投稿ツールで実際の'+(next==='scheduled'?'予約':'公開')+'を確認しましたか？ このアプリから投稿は実行されません。'))return;
+    p.externalConfirmed=true;
+  }
+  p.status=next;audit('投稿台帳状態更新',p.title+' '+next);save();renderPosts();renderGrowth();toast('投稿記録を更新しました');
+ });
+ $('#post-export-csv').addEventListener('click',()=>downloadCsv('mirror-posts.csv',['タイトル','媒体','投稿日時','状態','QA自主確認','公開URL','メモ','再生数','フォロー増','note流入'],state.posts.map(x=>[x.title,x.channels.join('/'),x.schedule,x.status,x.manualQa,x.url,x.note,x.metrics?.views,x.metrics?.follows,x.metrics?.clicks])));
+ $('#metric-post').addEventListener('change',()=>{const p=state.posts.find(x=>x.id===$('#metric-post').value);for(const key of METRIC_KEYS)$('#metric-'+key).value=typeof p?.metrics?.[key]==='number'?p.metrics[key]:''});
+ $('#metric-save').addEventListener('click',()=>{
+  let p=state.posts.find(x=>x.id===$('#metric-post').value);if(!p)return toast('対象作品を選んでください',true);
+  try{p.metrics=p.metrics||{};for(let key of METRIC_KEYS)p.metrics[key]=numOrNull('metric-'+key);if(METRIC_KEYS.every(k=>p.metrics[k]===null))return toast('少なくとも1項目を入力してください',true);p.metrics.updatedAt=new Date().toISOString();save();renderGrowth();toast('実績を更新しました（累計値）')}
+  catch(e){toast('実績は0以上の整数で入力してください',true)}
+ });
+ $('#revenue-month').addEventListener('change',renderRevenue);
+ $('#revenue-save-goal').addEventListener('click',()=>{let n=Number($('#revenue-goal').value);if(!Number.isFinite(n)||n<0||n>1000000000)return toast('目標金額が不正です',true);state.settings.monthlyGoal=Math.round(n);save();renderRevenue();toast('月間目標を保存しました')});
+ $('#revenue-add').addEventListener('click',()=>{let day=$('#revenue-date').value,kind=$('#revenue-kind').value,amount=Number($('#revenue-amount').value),label=$('#revenue-label').value.trim();if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!['sale','cost'].includes(kind)||!Number.isInteger(amount)||amount<1||amount>1000000000||!label)return toast('取引日・区分・金額・内容を確認してください',true);state.sales.push({id:newId(),day,kind,amount,label});$('#revenue-amount').value='';$('#revenue-label').value='';$('#revenue-month').value=day.slice(0,7);save();renderRevenue();toast('確定取引を記録しました')});
+ $('#revenue-list').addEventListener('click',e=>{const b=e.target.closest('[data-remove-sale]');if(!b)return;if(!confirm('記録した確定取引を削除しますか？'))return;state.sales=state.sales.filter(x=>x.id!==b.dataset.removeSale);save();renderRevenue()});
+ $('#growth-export-csv').addEventListener('click',()=>downloadCsv('mirror-ledger.csv',['日付','区分','内容','金額'],state.sales.map(x=>[x.day,x.kind,x.label,x.amount])));
+ $('#revenue-date').value=JST_DAY();$('#revenue-month').value=JST_DAY().slice(0,7);
+}
+
+handlers();setupExtras();render().catch(e=>{console.error(e);toast('画面の初期化で問題が発生しました',true)});
+})();
+
+
+
+</script>
+
+<script>
+/* PWA startup helper; no network telemetry and no remote database. */
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const https = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const local = location.protocol === 'file:' || location.protocol === 'content:';
+  let installEvent = null;
+  let workerState = '利用不可';
+  const write = (id, message) => { const el=$(id); if(el) el.textContent=message; };
+  async function status() {
+    const type = local ? '端末ファイルから起動（再起動時に参照が切れることがあります）' : https ? 'HTTPS／安全なURLから起動' : '非HTTPS：PWA機能は使えません';
+    write('pwa-launch-mode', type);
+    write('pwa-status',local?'ローカル起動':https?'HTTPS起動':'要設定');
+    write('pwa-online', navigator.onLine?'オンライン':'オフライン');
+    write('pwa-data-url', location.origin+location.pathname);
+    if(navigator.storage && navigator.storage.persisted) {
+      try {const pers=await navigator.storage.persisted();write('pwa-persist',pers?'ブラウザが永続化を許可':'永続化未許可（JSONバックアップ必須）');}
+      catch { write('pwa-persist','未確認'); }
+    } else write('pwa-persist','このブラウザでは判定できません');
+    write('pwa-offline',workerState);
+  }
+  window.addEventListener('online',status);
+  window.addEventListener('offline',status);
+  window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault();installEvent=e;status(); });
+  document.addEventListener('DOMContentLoaded',() => {
+    $('pwa-persist-btn')?.addEventListener('click', async()=>{
+      if(!navigator.storage?.persist){alert('このブラウザは保存領域の永続化リクエストに対応していません。JSONバックアップを継続してください。');return;}
+      try {const result=await navigator.storage.persist();await status();alert(result?'保存領域の永続化が許可されました。ただしJSONバックアップは引き続き必要です。':'ブラウザが永続化を許可しませんでした。JSONバックアップを続けてください。');}
+      catch {alert('保存領域の状態を確認できませんでした。');}
+    });
+    $('pwa-install-btn')?.addEventListener('click',async()=>{
+      if(installEvent){const e=installEvent;installEvent=null;await e.prompt();return;}
+      alert(https?'Chromeメニュー（⋮）から「ホーム画面に追加」または「アプリをインストール」を選択してください。表示されない場合はHTTPSの配置・PWAのインストール条件をご確認ください。':'先に固定HTTPSアドレスでOSを開いてください。Filesから開いた画面ではPWAとしてのインストールはできません。');
+    });
+    status();
+    if(https && 'serviceWorker' in navigator){
+      navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(async()=>{
+        await navigator.serviceWorker.ready;
+        workerState='基本ファイルを保存済み（オフライン利用を要実機確認）';
+        status();
+      }).catch(err=>{workerState='登録失敗（'+String(err.message||err).slice(0,80)+'）';status();});
+    }else{workerState=local?'ローカル起動では利用不可':'非対応または非HTTPS';status();}
+  });
+})();
+</script>
+</body>
+</html>
