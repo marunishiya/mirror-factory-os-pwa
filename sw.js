@@ -1,5 +1,5 @@
 /* PWA assets only. Never cache personal JSON, data URLs, or user uploads. */
-const CACHE = 'mirror-factory-shell-v1.1.0';
+const CACHE = 'mirror-factory-shell-v1.2.0';
 const ASSETS = ['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
