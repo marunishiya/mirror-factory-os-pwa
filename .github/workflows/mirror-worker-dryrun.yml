@@ -1,0 +1,107 @@
+name: MIRROR Worker - manual safe deploy
+"on":
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Validate first; bootstrap and dry-run require Cloudflare token'
+        required: true
+        type: choice
+        options:
+          - validate
+          - bootstrap
+          - dry-run
+        default: validate
+      confirmation:
+        description: 'Type DRY_RUN_ONLY (no SNS publishing in any stage)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: mirror-social-scheduler-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: ${{ github.repository == 'marunishiya/mirror-factory-os-pwa' && github.ref == 'refs/heads/main' && inputs.confirmation == 'DRY_RUN_ONLY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify locked source archive
+        shell: bash
+        run: |
+          echo 'e27bb7c64212476963ea0282af7e0c0a6fdf10bbf886bd3b0bab29ddde094159  mirror-worker-code-v04.zip' | sha256sum --check --status
+          unzip -q mirror-worker-code-v04.zip
+          test -f cloudflare-worker/src/bootstrap.js
+          test -f cloudflare-worker/src/dryrun.js
+          test -f cloudflare-worker/wrangler.jsonc
+      - name: Unit and safety checks
+        run: npm --prefix cloudflare-worker test
+      - name: Choose the deployment stage
+        env:
+          STAGE: ${{ inputs.stage }}
+        shell: bash
+        run: |
+          case "$STAGE" in
+            validate|bootstrap) cp cloudflare-worker/src/bootstrap.js cloudflare-worker/src/index.js ;;
+            dry-run) cp cloudflare-worker/src/dryrun.js cloudflare-worker/src/index.js ;;
+            *) echo 'Unrecognized stage'; exit 1 ;;
+          esac
+      - name: Compile only - no deployment, no token required
+        if: ${{ inputs.stage == 'validate' }}
+        working-directory: cloudflare-worker
+        run: npx --yes wrangler@4 deploy --dry-run --config wrangler.jsonc
+      - name: Require configured Cloudflare secret
+        if: ${{ inputs.stage != 'validate' }}
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CF_TOKEN" ]; then echo 'CLOUDFLARE_API_TOKEN secret is not configured'; exit 1; fi
+      - name: Deploy via official Wrangler Action
+        if: ${{ inputs.stage != 'validate' }}
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: '540e01bde79f1cea4f49bc8f5b294893'
+          workingDirectory: cloudflare-worker
+          command: deploy --config wrangler.jsonc
+      - name: Verify D1 connection and anonymous API lock
+        if: ${{ inputs.stage != 'validate' }}
+        env:
+          DEPLOY_STAGE: ${{ inputs.stage }}
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const expected = process.env.DEPLOY_STAGE === 'bootstrap' ? '0.4-bootstrap' : '0.4-dry-run';
+          const base = 'https://mirror-social-scheduler.projectmirror-ai.workers.dev';
+          let lastError = null;
+          for (let attempt=1; attempt<=10; attempt++) {
+            try {
+              const r = await fetch(base + '/health', {signal:AbortSignal.timeout(8000)});
+              const body = await r.json();
+              assert.equal(r.status, 200);
+              assert.equal(body.service, 'MIRROR SOCIAL ENGINE');
+              assert.equal(body.version, expected);
+              assert.equal(body.databaseReady, true);
+              assert.equal(body.publishingEnabled, false);
+              if (expected === '0.4-bootstrap') assert.equal(body.jobSubmissionEnabled, false);
+              const jobs = await fetch(base + '/jobs', {signal:AbortSignal.timeout(8000)});
+              assert.ok([401,403,404,405,503].includes(jobs.status), 'Anonymous access denied');
+              console.log('PASS: ' + expected + ' /health ready; /jobs not publicly accessible');
+              process.exit(0);
+            } catch(e) {
+              lastError=e;
+              console.log('Waiting for deployed Worker ' + attempt + '/10: ' + e.message);
+              await new Promise(resolve=>setTimeout(resolve, 2500));
+            }
+          }
+          console.error('Live verification failed:',lastError?.message);
+          process.exit(1);
+          JS
