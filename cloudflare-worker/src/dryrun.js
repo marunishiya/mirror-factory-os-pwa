@@ -81,7 +81,7 @@ async function handler(request,env){
   }
   if(request.method==='GET'&&(path==='/'||path==='/health')){
     const dbReady=await readyDB(env.DB);
-    return json({service:'MIRROR SOCIAL ENGINE',version:'0.4-dry-run',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:false,snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
+    return json({service:'MIRROR SOCIAL ENGINE',version:'0.5-dry-run',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:false,snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
   }
   if(request.method==='GET'&&path==='/channels'){
     return json({channels:CHANNELS.map(id=>({id,connected:false,autoPublishEnabled:false})),note:{autoPublishEnabled:false,mode:'manual_handoff'}},200,origin);
@@ -102,15 +102,22 @@ async function handler(request,env){
     try { job=validation(JSON.parse(body)); }
     catch(e){return json({error:e.message||'invalid_job'},400,origin);}
     const now=new Date().toISOString(),id=crypto.randomUUID();
-    const result=await env.DB.prepare(`INSERT OR IGNORE INTO jobs(id,campaign_id,platform,title,caption,asset_ref,run_at_utc,mode,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'dry_run','queued',?,?)`).bind(id,job.campaignId,job.platform,job.title,job.caption,job.assetRef,job.runAtUTC,now,now).run();
+    // One D1 transaction: never persist a job without its creation audit event.
+    const [result]=await env.DB.batch([
+      env.DB.prepare(`INSERT OR IGNORE INTO jobs(id,campaign_id,platform,title,caption,asset_ref,run_at_utc,mode,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'dry_run','queued',?,?)`).bind(id,job.campaignId,job.platform,job.title,job.caption,job.assetRef,job.runAtUTC,now,now),
+      env.DB.prepare("INSERT INTO job_events(job_id,event,detail,created_at) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM jobs WHERE id=?)").bind(id,'created','DRY RUN ONLY',now,id)
+    ]);
     if(!result.meta?.changes)return json({status:'duplicate',note:'Previously queued campaign/platform unchanged. No SNS post.'},200,origin);
-    await env.DB.prepare('INSERT INTO job_events(job_id,event,detail,created_at) VALUES(?,?,?,?)').bind(id,'created','DRY RUN ONLY',now).run();
     return json({id,status:'queued',mode:'dry_run',publishingEnabled:false},201,origin);
   }
   const cancel=path.match(/^\/jobs\/([a-f0-9-]{36})\/cancel$/);
   if(request.method==='POST'&&cancel){
-    const now=new Date().toISOString();const r=await env.DB.prepare("UPDATE jobs SET status='cancelled',updated_at=? WHERE id=? AND status='queued'").bind(now,cancel[1]).run();
-    if(r.meta?.changes)await env.DB.prepare('INSERT INTO job_events(job_id,event,detail,created_at) VALUES(?,?,?,?)').bind(cancel[1],'cancelled','manual_cancel',now).run();
+    const now=new Date().toISOString();
+    const [r]=await env.DB.batch([
+      env.DB.prepare("UPDATE jobs SET status='cancelled',updated_at=? WHERE id=? AND status='queued'").bind(now,cancel[1]),
+      // SQLite changes() refers to the preceding UPDATE in this transaction.
+      env.DB.prepare("INSERT INTO job_events(job_id,event,detail,created_at) SELECT ?,?,?,? WHERE changes()=1").bind(cancel[1],'cancelled','manual_cancel',now)
+    ]);
     return json({cancelled:Boolean(r.meta?.changes)},200,origin);
   }
   return json({error:'not_found'},404,origin);
@@ -120,12 +127,14 @@ async function processDue(db,now){
   const r=await db.prepare("SELECT id FROM jobs WHERE status='queued' AND mode='dry_run' AND run_at_utc<=? ORDER BY run_at_utc LIMIT 10").bind(now).all();
   let simulated=0;
   for(const row of r.results||[]){
-    const claimed=await db.prepare("UPDATE jobs SET status='processing',attempts=attempts+1,updated_at=? WHERE id=? AND status='queued' AND mode='dry_run'").bind(now,row.id).run();
-    if(!claimed.meta?.changes)continue;
-    await db.prepare('INSERT INTO job_events(job_id,event,detail,created_at) VALUES(?,?,?,?)').bind(row.id,'claimed','internal_scheduler',now).run();
-    await db.prepare("UPDATE jobs SET status='simulated',last_error='',updated_at=? WHERE id=? AND status='processing'").bind(now,row.id).run();
-    await db.prepare('INSERT INTO job_events(job_id,event,detail,created_at) VALUES(?,?,?,?)').bind(row.id,'simulated','No SNS API called; nothing published.',now).run();
-    simulated++;
+    // DRY RUN ONLY: no outgoing API call. Atomically simulate and audit to avoid
+    // abandoned 'processing' jobs; a concurrent scheduled invocation loses the CAS.
+    const [claimed]=await db.batch([
+      db.prepare("UPDATE jobs SET status='simulated',attempts=attempts+1,last_error='',updated_at=? WHERE id=? AND status='queued' AND mode='dry_run' AND run_at_utc<=?").bind(now,row.id,now),
+      db.prepare("INSERT INTO job_events(job_id,event,detail,created_at) SELECT ?,?,?,? WHERE changes()=1").bind(row.id,'claimed','internal_scheduler',now),
+      db.prepare("INSERT INTO job_events(job_id,event,detail,created_at) SELECT ?,?,?,? WHERE changes()=1").bind(row.id,'simulated','No SNS API called; nothing published.',now)
+    ]);
+    if(claimed.meta?.changes)simulated++;
   }
   return simulated;
 }
