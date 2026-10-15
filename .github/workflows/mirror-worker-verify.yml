@@ -40,10 +40,12 @@ jobs:
           test -f cloudflare-worker/wrangler.jsonc
       - name: Run Worker unit and safety tests
         run: npm --prefix cloudflare-worker test
-      - name: Bundle bootstrap only, NO deployment
+      - name: Bundle bootstrap and scheduled dry-run, NO deployment
         shell: bash
         run: |
           set -euo pipefail
           cp cloudflare-worker/src/bootstrap.js cloudflare-worker/src/index.js
           cd cloudflare-worker
+          npx --yes wrangler@4.151.0 deploy --dry-run --config wrangler.jsonc
+          cp src/dryrun.js src/index.js
           npx --yes wrangler@4.151.0 deploy --dry-run --config wrangler.jsonc
