@@ -1,5 +1,5 @@
 /**
- * MIRROR SOCIAL ENGINE | Worker v0.4 | DRY RUN ONLY
+ * MIRROR SOCIAL ENGINE | Worker v0.5 development | DRY RUN ONLY
  * D1 binding: DB => mirror-social-db
  * Optional future secret: ADMIN_TOKEN (at least 32 characters)
  * Public: GET /, /health, /channels. Private routes LOCKED unless ADMIN_TOKEN exists.
@@ -24,8 +24,38 @@ function authorized(request,env){
 }
 async function readyDB(db){
   if(!db)return false;
-  const r=await db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('jobs','job_events')").first();
-  return Number(r?.n)===2;
+  try {
+    const r=await db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('jobs','job_events')").first();
+    return Number(r?.n)===2;
+  } catch {
+    // D1 can be temporarily unavailable. Report 503 without exposing database internals.
+    return false;
+  }
+}
+/**
+ * Read at most 12KB of UTF-8 JSON. Content-Length cannot be trusted:
+ * stream and count actual bytes before buffering the request.
+ */
+async function readLimitedBody(request,maxBytes=12000){
+  const claimed=Number(request.headers.get('content-length'));
+  if(Number.isFinite(claimed)&&claimed>maxBytes)return null;
+  if(!request.body)return '';
+  const reader=request.body.getReader(),parts=[];
+  let size=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    size+=value.byteLength;
+    if(size>maxBytes){
+      await reader.cancel();
+      return null;
+    }
+    parts.push(value);
+  }
+  const data=new Uint8Array(size);
+  let at=0;
+  for(const part of parts){data.set(part,at);at+=part.byteLength;}
+  return new TextDecoder('utf-8',{fatal:true}).decode(data);
 }
 function validation(input){
   if(!input||typeof input!=='object'||Array.isArray(input))throw Error('invalid_json');
@@ -64,9 +94,13 @@ async function handler(request,env){
     return json({jobs:r.results||[],dryRunOnly:true},200,origin);
   }
   if(request.method==='POST'&&path==='/jobs'){
-    if(Number(request.headers.get('content-length')||0)>12000)return json({error:'body_too_large'},413,origin);
-    const body=await request.text(); if(body.length>12000)return json({error:'body_too_large'},413,origin);
-    let job;try{job=validation(JSON.parse(body));}catch(e){return json({error:e.message||'invalid_job'},400,origin);}
+    let body;
+    try { body=await readLimitedBody(request); }
+    catch { return json({error:'invalid_json'},400,origin); }
+    if(body===null)return json({error:'body_too_large'},413,origin);
+    let job;
+    try { job=validation(JSON.parse(body)); }
+    catch(e){return json({error:e.message||'invalid_job'},400,origin);}
     const now=new Date().toISOString(),id=crypto.randomUUID();
     const result=await env.DB.prepare(`INSERT OR IGNORE INTO jobs(id,campaign_id,platform,title,caption,asset_ref,run_at_utc,mode,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'dry_run','queued',?,?)`).bind(id,job.campaignId,job.platform,job.title,job.caption,job.assetRef,job.runAtUTC,now,now).run();
     if(!result.meta?.changes)return json({status:'duplicate',note:'Previously queued campaign/platform unchanged. No SNS post.'},200,origin);
