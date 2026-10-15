@@ -1,0 +1,49 @@
+name: MIRROR Worker - pull request safety checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/mirror-worker-verify.yml'
+      - '.github/workflows/mirror-worker-dryrun.yml'
+      - 'mirror-worker-code-v04.zip'
+      - 'cloudflare-worker/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Tests and Wrangler dry-run (no deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare Worker in temporary CI checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f cloudflare-worker/package.json ]; then
+            echo 'Tracked Worker source found; using it without ZIP extraction.'
+          else
+            echo 'Verify checksum before extracting legacy ZIP.'
+            echo 'e27bb7c64212476963ea0282af7e0c0a6fdf10bbf886bd3b0bab29ddde094159  mirror-worker-code-v04.zip' | sha256sum --check
+            unzip -q mirror-worker-code-v04.zip
+          fi
+          test -f cloudflare-worker/src/bootstrap.js
+          test -f cloudflare-worker/src/dryrun.js
+          test -f cloudflare-worker/wrangler.jsonc
+      - name: Run Worker unit and safety tests
+        run: npm --prefix cloudflare-worker test
+      - name: Bundle bootstrap only, NO deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp cloudflare-worker/src/bootstrap.js cloudflare-worker/src/index.js
+          cd cloudflare-worker
+          npx --yes wrangler@4.151.0 deploy --dry-run --config wrangler.jsonc
