@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/dryrun.test.mjs && node test/bootstrap.test.mjs && node scripts/audit.mjs"
+    "test": "node test/dryrun.test.mjs && node test/bootstrap.test.mjs && node test/safety.test.mjs && node scripts/audit.mjs"
   }
 }
