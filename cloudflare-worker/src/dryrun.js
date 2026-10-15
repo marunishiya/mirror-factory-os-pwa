@@ -140,5 +140,9 @@ async function processDue(db,now){
 }
 export default {
   async fetch(request,env){try{return await handler(request,env)}catch(e){console.error('worker_error',e?.message||'unknown');return json({error:'internal_error'},500,request.headers.get('Origin')||'');}},
-  async scheduled(controller,env,ctx){ctx.waitUntil(processDue(env.DB,new Date(controller.scheduledTime).toISOString()));}
+  async scheduled(controller,env,ctx){
+    // Persisted run_at_utc is second-precision ISO-Z; use the same precision in comparisons.
+    const now=new Date(controller.scheduledTime).toISOString().replace(/\.\d{3}Z$/,'Z');
+    ctx.waitUntil(processDue(env.DB,now));
+  }
 };
