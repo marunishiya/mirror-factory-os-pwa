@@ -25,6 +25,8 @@ small{color:#b3bfd2}.warn{color:#ffd489}.good{color:#a3e8c3}pre{white-space:pre-
 <label for="token">管理者トークン（この画面では保存しません）</label>
 <input id="token" type="password" class="secret" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="CloudflareのADMIN_TOKEN">
 <div class="actions"><button class="secondary" id="probe" type="button">接続確認</button><button class="secondary" id="refresh" type="button">予約一覧を確認</button></div>
+<div class="actions"><button class="secondary" id="videoStatusBtn" type="button">動画SNSの接続準備状況</button></div>
+<pre id="videoStatus" aria-live="polite">YouTube / Instagram / TikTok の公式API連携は開発中です。準備状況は接続後に確認できます。</pre>
 <div id="connection" aria-live="polite" class="sub">実投稿にはWorker側の設定とSNS公式認証が別途必要です。</div>
 </section>
 <section class="card"><h2>2. 投稿を予約</h2>
@@ -89,6 +91,20 @@ $('probe').addEventListener('click',async()=>{
   const data=await readable(await fetch(endpoint()+'/health'));
   $('connection').textContent='Worker応答：'+data.version+' / DB='+String(data.databaseReady)+' / 投稿切替='+String(data.publishingEnabled)+'。接続は投稿成功の保証ではありません。';
  }catch(e){$('connection').textContent='接続失敗：'+e.message}
+});
+$('videoStatusBtn').addEventListener('click',async()=>{
+ $('videoStatus').textContent='安全な診断情報を読み込み中…';
+ try{
+  if(!$('token').value)throw Error('管理者トークンが必要です');
+  const data=await readable(await fetch(endpoint()+'/video-readiness',{headers:headers()}));
+  const label={youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok'};
+  const lines=Object.keys(label).map(key=>{
+   const item=data[key]||{};
+   return label[key]+'：'+(item.configured?'設定項目は揃っています（実接続は未検証）':'設定不足')+
+    '\\n  必要な項目：'+(item.missing||[]).join(', ');
+  });
+  $('videoStatus').textContent=lines.join('\\n\\n')+'\\n\\nこの診断ではSNSログイン・投稿成功を確認できません。';
+ }catch(e){$('videoStatus').textContent='診断失敗：'+e.message}
 });
 $('refresh').addEventListener('click',async()=>{
  $('jobs').textContent='取得中…';
