@@ -79,5 +79,55 @@ await check('local Cron fires DRY-RUN job with D1 atomic status update',async()=
  assert.equal(item?.status,'simulated');
  assert.equal(item?.attempts,1);
 });
-console.log('RESULT Cloudflare local D1 '+count+'/10 PASS');
-if(count!==10)process.exitCode=1;
+const videoPlan={platform:'instagram',campaignId:'mirror_qa_video_001',title:'Instagram dry reservation',
+ caption:'QA only - not a real post',qaApproved:true,mediaApproved:true,publishApproved:true,isAigc:true,
+ runAtUTC:new Date(Date.now()+600000).toISOString().slice(0,19)+'Z',
+ videoUrl:'https://media.example.com/approved/qa.mp4'};
+let videoId;
+await check('video queue exists in real local D1 and lists empty',async()=>{
+ const {response,json}=await request('/video/jobs',{headers:auth});
+ assert.equal(response.status,200);assert.deepEqual(json.jobs,[]);
+ assert.equal(json.autoPublishConfigured,false);
+});
+await check('video queue cannot be accessed without owner bearer',async()=>{
+ const {response}=await request('/video/jobs');assert.equal(response.status,401);
+});
+await check('video explicit user approval required',async()=>{
+ const {response,json}=await request('/video/jobs',{method:'POST',headers:auth,body:{...videoPlan,publishApproved:false}});
+ assert.equal(response.status,400);assert.equal(json.error,'video_explicit_approval_required');
+});
+await check('video URL can only use verified media prefix',async()=>{
+ const {response}=await request('/video/jobs',{method:'POST',headers:auth,body:{...videoPlan,videoUrl:'https://attacker.example/qa.mp4'}});
+ assert.equal(response.status,400);
+});
+await check('video reservation stored once without any SNS call',async()=>{
+ const {response,json}=await request('/video/jobs',{method:'POST',headers:auth,body:videoPlan});
+ assert.equal(response.status,201);assert.equal(json.status,'queued');assert.equal(json.liveReady,false);
+ videoId=json.id;
+ const rows=await request('/video/jobs',{headers:auth});
+ assert.equal(rows.json.jobs.length,1);assert.equal(rows.json.jobs[0].status,'queued');
+});
+await check('same video campaign is idempotent',async()=>{
+ const {response,json}=await request('/video/jobs',{method:'POST',headers:auth,body:videoPlan});
+ assert.equal(response.status,200);assert.equal(json.created,false);assert.equal(json.id,videoId);
+});
+await check('campaign reuse with changed content is rejected',async()=>{
+ const {response,json}=await request('/video/jobs',{method:'POST',headers:auth,body:{...videoPlan,caption:'Different content'}});
+ assert.equal(response.status,409);assert.equal(json.error,'video_campaign_conflict');
+});
+await check('local Cron does not publish queued video while disabled',async()=>{
+ const response=await fetch(base+'/cdn-cgi/local/scheduled?time='+(Date.now()+700000)+'&cron=*%20*%20*%20*%20*');
+ assert.equal(response.status,200);
+ const list=await request('/video/jobs',{headers:auth});
+ assert.equal(list.json.jobs.find(x=>x.id===videoId)?.status,'queued');
+});
+await check('owner can cancel queued video once',async()=>{
+ const first=await request('/video/jobs/'+videoId+'/cancel',{method:'POST',headers:auth});
+ assert.equal(first.response.status,200);assert.equal(first.json.cancelled,true);
+ const second=await request('/video/jobs/'+videoId+'/cancel',{method:'POST',headers:auth});
+ assert.equal(second.response.status,200);assert.equal(second.json.cancelled,false);
+ const rows=await request('/video/jobs',{headers:auth});
+ assert.equal(rows.json.jobs[0].status,'cancelled');
+});
+console.log('RESULT Cloudflare local D1 '+count+'/19 PASS');
+if(count!==19)process.exitCode=1;
