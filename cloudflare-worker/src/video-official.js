@@ -207,3 +207,27 @@ export function videoReadiness(env={}){
   ])
  };
 }
+
+/** Read-only publication checks. All publication receipts require independent verification. */
+export async function instagramPublishedMediaStatus(mediaId,env,transport=fetch){
+ const cfg=igSettings(env);
+ if(!/^\d+$/.test(String(mediaId||'')))throw Error('instagram_invalid_media_receipt');
+ const response=await jsonResponse(await transport(cfg.base+'/'+mediaId+'?fields=id,permalink,media_type,timestamp',{
+  method:'GET',headers:{Authorization:'Bearer '+cfg.token}
+ }),'instagram');
+ return {verified:String(response.id||'')===String(mediaId)&&typeof response.permalink==='string'&&response.permalink.startsWith('https://'),
+  permalink:typeof response.permalink==='string'&&response.permalink.startsWith('https://')?response.permalink:null};
+}
+export async function youtubeVideoStatus(videoId,env,transport=fetch){
+ if(!/^[a-zA-Z0-9_-]{6,32}$/.test(String(videoId||'')))throw Error('youtube_invalid_video_receipt');
+ const token=await googleAccessToken(env,transport);
+ const url='https://www.googleapis.com/youtube/v3/videos?part=status,processingDetails&id='+encodeURIComponent(videoId);
+ const result=await jsonResponse(await transport(url,{method:'GET',headers:{Authorization:'Bearer '+token}}),'youtube');
+ const video=Array.isArray(result.items)?result.items.find(v=>v.id===videoId):null;
+ if(!video)return {processed:false,rejected:false,missing:true,privacyStatus:'unknown'};
+ const upload=video.status?.uploadStatus||'unknown';
+ const processing=video.processingDetails?.processingStatus||'unknown';
+ const rejected=['rejected','failed','deleted'].includes(upload)||['failed','terminated'].includes(processing);
+ const processed=upload==='processed'&&['succeeded','unknown'].includes(processing);
+ return {processed,rejected,privacyStatus:video.status?.privacyStatus||'unknown'};
+}
