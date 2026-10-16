@@ -1,6 +1,7 @@
+import worker from '../src/dryrun.js';
 import assert from 'node:assert/strict';
 import {
- verifiedVideoUrl,approvedR2Key,createInstagramReel,instagramContainerStatus,publishInstagramReadyReel,
+ videoReadiness,verifiedVideoUrl,approvedR2Key,createInstagramReel,instagramContainerStatus,publishInstagramReadyReel,
  tiktokCreatorInfo,submitTikTokVideo,tiktokVideoStatus,uploadYoutubeVideo
 } from '../src/video-official.js';
 
@@ -173,5 +174,29 @@ await check('YouTube missing R2 binding is rejected before network',async()=>{
 await check('YouTube error after rejected Google refresh is not success',async()=>{
  await assert.rejects(uploadYoutubeVideo(job,yt,async()=>new Response('expired',{status:401})),/youtube_http_401/);
 });
-console.log('RESULT official video APIs '+n+'/22 PASS');
-if(n!==22)process.exitCode=1;
+await check('video readiness never claims verified account or published content',async()=>{
+ const r=videoReadiness({});
+ assert.equal(r.youtube.configured,false);assert.equal(r.instagram.configured,false);
+ assert.equal(r.tiktok.configured,false);
+ assert.equal(r.youtube.connected,false);assert.equal(r.instagram.publishingVerified,false);
+ assert.ok(!JSON.stringify(r).includes('mock_ig_token'));
+});
+await check('video readiness shows only missing field names, never secret contents',async()=>{
+ const config=videoReadiness({...base,...ig,TIKTOK_USER_ACCESS_TOKEN:'SUPER_PRIVATE'});
+ const serialized=JSON.stringify(config);
+ assert.ok(!serialized.includes('SUPER_PRIVATE'));
+ assert.ok(!serialized.includes('mock_ig_token'));
+ assert.ok(config.instagram.missing.includes('instagram_permissions_confirmed'));
+});
+await check('video readiness endpoint is authenticated and safe for mobile QA',async()=>{
+ const secret='this-is-a-long-dummy-admin-token-for-tests';
+ const env={ADMIN_TOKEN:secret,DB:{prepare(){return {async first(){return {n:2}}}}}};
+ const anon=await worker.fetch(new Request('https://mirror.example/video-readiness'),env);
+ assert.equal(anon.status,401);
+ const res=await worker.fetch(new Request('https://mirror.example/video-readiness',{headers:{Authorization:'Bearer '+secret}}),env);
+ assert.equal(res.status,200);
+ const r=await res.json();assert.equal(r.youtube.configured,false);
+ assert.equal(r.tiktok.connected,false);
+});
+console.log('RESULT official video APIs '+n+'/25 PASS');
+if(n!==25)process.exitCode=1;
