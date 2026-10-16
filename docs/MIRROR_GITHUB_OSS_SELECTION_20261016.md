@@ -17,7 +17,7 @@ GitHub Star数だけで採用しない。作業履歴と採否理由をPRに残�
 - テスト用ローカルD1設定 `cloudflare-worker/wrangler.local-test.jsonc` は実プロジェクトとは**異なるダミーのDB ID**を使用。GitHub Actionsで使う`--local`、一時データフォルダー、ダミー管理者トークンのみ。Cloudflare API認証情報を渡さない。
 - `cloudflare-worker/test/schema.local-test.sql` は **テスト用仮スキーマ**。本番D1の実スキーマと一致する保証なし。本番マイグレーションには転用しない。
 - `cloudflare-worker/test/local-d1.test.mjs` は`/health`、liveモード既定拒否、認証拒否、不正JSON、登録、重複防止、取得、キャンセル、再キャンセルを検証。
-- GitHub Actions検証は `https://github.com/marunishiya/mirror-factory-os-pwa/actions/runs/38842776475` の **74 JS + 5 SQLite + 9 Cloudflare local D1** PASS。従来のWrangler `--dry-run` ビルド2種類も成功。
+- GitHub Actions検証は `https://github.com/marunishiya/mirror-factory-os-pwa/actions/runs/38843045469` の **74 JS + 5 SQLite + 10 Cloudflare local D1** PASS。さらにWranglerの`--test-scheduled`を使ってCronイベントを模擬実行し、予定時刻到達ジョブがD1上で`queued`→`simulated`になることを確認。従来のWrangler `--dry-run` ビルド2種類も成功。
 
 ## 次に見つけるべき不足機能
 1. YouTube/Instagram/TikTokの公式OAuthトークン管理・審査条件と**Workersで扱える動画アップロード**。SNSアカウントの正式連携前に実投稿成功を宣言しない。
