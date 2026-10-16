@@ -101,9 +101,9 @@ $('videoStatusBtn').addEventListener('click',async()=>{
   const lines=Object.keys(label).map(key=>{
    const item=data[key]||{};
    return label[key]+'：'+(item.configured?'設定項目は揃っています（実接続は未検証）':'設定不足')+
-    '\\n  必要な項目：'+(item.missing||[]).join(', ');
+    '\n  必要な項目：'+(item.missing||[]).join(', ');
   });
-  $('videoStatus').textContent=lines.join('\\n\\n')+'\\n\\nこの診断ではSNSログイン・投稿成功を確認できません。';
+  $('videoStatus').textContent=lines.join('\n\n')+'\n\nこの診断ではSNSログイン・投稿成功を確認できません。';
  }catch(e){$('videoStatus').textContent='診断失敗：'+e.message}
 });
 $('refresh').addEventListener('click',async()=>{
