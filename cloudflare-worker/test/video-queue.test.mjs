@@ -21,6 +21,7 @@ class DB {
    async first(){if(sql.includes('sqlite_master'))return {n:2};throw Error('unknown read '+sql)},
    async all(){
     if(sql.includes("status='queued'"))return {results:db.rows.filter(x=>x.status==='queued'&&x.run_at_utc<=args[0]).map(x=>({...x}))};
+    if(sql.includes("check_attempts>=288"))return {results:db.rows.filter(x=>['processing','submitted'].includes(x.status)&&x.check_attempts>=288).map(x=>({...x}))};
     if(sql.includes("status IN ('processing','submitted')"))return {results:db.rows.filter(x=>['processing','submitted'].includes(x.status)&&(x.next_check_utc===''||x.next_check_utc<=args[0])).map(x=>({...x}))};
     throw Error('unknown list '+sql)
    },
