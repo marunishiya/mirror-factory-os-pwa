@@ -40,6 +40,33 @@ small{color:#b3bfd2}.warn{color:#ffd489}.good{color:#a3e8c3}pre{white-space:pre-
 </form>
 <div id="preview" aria-live="polite"></div>
 </section>
+<section class="card"><h2>2B. 動画を3媒体へ予約</h2>
+<p class="sub">YouTube・Instagram・TikTokの公式APIを使う開発版です。予約を保存しても、Workerの実投稿設定・本人認証が整うまでは公開されません。未公開MASTERは入力しないでください。</p>
+<form id="videoForm">
+<label for="videoNetwork">媒体</label><select id="videoNetwork">
+<option value="youtube">YouTube Shorts</option><option value="instagram">Instagram Reels</option><option value="tiktok">TikTok</option>
+</select>
+<label for="videoTitle">作品・管理タイトル</label><input id="videoTitle" required maxlength="150" placeholder="PROJECT MIRROR｜第1章">
+<label for="videoCaption">投稿本文</label><textarea id="videoCaption" required maxlength="2200" placeholder="読者に伝えるキャプション"></textarea>
+<div id="r2Group"><label for="videoR2">承認済み動画のR2保存先</label>
+<input id="videoR2" placeholder="approved-videos/short-001.mp4"><small>動画のアップロード機能は未接続。事前にPrivate R2へ保存された承認済みファイルのみ。</small></div>
+<div id="urlGroup" hidden><label for="videoPublicUrl">公式APIに渡す承認済みMP4のHTTPS URL</label>
+<input type="url" id="videoPublicUrl" placeholder="https://your-verified-domain.example/approved/short.mp4">
+<small>Cloudflareで認証した動画配布先のみ。非公開MASTERのURLは使用禁止。</small></div>
+<div id="privacyGroup"><label for="videoPrivacy">公開範囲</label><select id="videoPrivacy"></select>
+<small id="privacyHelp">公開範囲は明示的に指定してください。</small></div>
+<label for="videoWhen">予約日時（日本時間）</label><input id="videoWhen" type="datetime-local" required>
+<label class="check"><input type="checkbox" id="videoAigc" checked><span>AI生成・加工された動画であることを申告する</span></label>
+<label class="check"><input type="checkbox" id="videoQa"><span>映像、台詞、Canon、本文を確認済み</span></label>
+<label class="check"><input type="checkbox" id="videoMedia"><span>動画素材の公開権限・著作権・本人の同意を確認済み</span></label>
+<label class="check"><input type="checkbox" id="videoApproval"><span>この動画・媒体・日時で予約し、接続完了後の公式API自動投稿を承認する</span></label>
+<div class="actions"><button type="button" class="secondary" id="videoPreviewBtn">予約内容を確認</button>
+<button type="submit" id="videoSubmit" disabled>動画予約を登録</button></div>
+</form>
+<pre id="videoResult" aria-live="polite">まだ予約されていません。</pre>
+<div class="actions"><button type="button" class="secondary" id="videoRefresh">動画予約の状況を確認</button></div>
+<pre id="videoJobs">ここに予約・投稿状態を表示します。</pre>
+</section>
 <section class="card"><h2>3. 予約・送信結果</h2><p class="sub">queued＝予約済み、published＝送信成功、needs_review / dispatching＝要確認。送信状態が不明なジョブは自動再投稿しません。</p><pre id="jobs">「予約一覧を確認」を押すと表示します。</pre></section>
 <p class="sub">GitHub Pages等のHTTPS環境から使ってください。トークンを共有・スクリーンショットへ表示しないでください。ブラウザを閉じると入力したトークンは消えます。</p>
 </main><script type="module">
@@ -106,6 +133,81 @@ $('videoStatusBtn').addEventListener('click',async()=>{
   $('videoStatus').textContent=lines.join('\n\n')+'\n\nこの診断ではSNSログイン・投稿成功を確認できません。';
  }catch(e){$('videoStatus').textContent='診断失敗：'+e.message}
 });
+
+const videoPrivacyChoices={
+ youtube:[['private','非公開（確認用）'],['unlisted','限定公開'],['public','一般公開']],
+ instagram:[['','Reels 公開（プロアカウント）']],
+ tiktok:[['SELF_ONLY','自分のみ'],['MUTUAL_FOLLOW_FRIENDS','相互フォロワー'],['FOLLOWER_OF_CREATOR','フォロワー'],['PUBLIC_TO_EVERYONE','一般公開（承認条件あり）']]
+};
+let videoCampaignId='',videoApprovedPreview='';
+function showVideoFields(){
+ const platform=$('videoNetwork').value;
+ $('r2Group').hidden=platform!=='youtube';
+ $('urlGroup').hidden=platform==='youtube';
+ $('privacyGroup').hidden=platform==='instagram';
+ $('videoPrivacy').replaceChildren();
+ for(const [value,label] of videoPrivacyChoices[platform]){
+  const opt=document.createElement('option');opt.value=value;opt.textContent=label;$('videoPrivacy').appendChild(opt);
+ }
+ invalidateVideo();
+}
+function invalidateVideo(){videoApprovedPreview='';$('videoSubmit').disabled=true}
+for(const id of ['videoTitle','videoCaption','videoR2','videoPublicUrl','videoPrivacy','videoWhen','videoAigc','videoQa','videoMedia','videoApproval']){
+ $(id).addEventListener('input',invalidateVideo);
+ $(id).addEventListener('change',invalidateVideo);
+}
+$('videoNetwork').addEventListener('change',showVideoFields);
+showVideoFields();
+function collectVideo(){
+ const t=new Date($('videoWhen').value);
+ if(!Number.isFinite(t.getTime())||t.getTime()<Date.now()+30000)throw Error('未来の予約日時を入力してください');
+ const platform=$('videoNetwork').value;
+ const o={platform,campaignId:videoCampaignId,title:$('videoTitle').value.trim(),caption:$('videoCaption').value.trim(),
+  runAtUTC:t.toISOString().slice(0,19)+'Z',
+  qaApproved:$('videoQa').checked,mediaApproved:$('videoMedia').checked,publishApproved:$('videoApproval').checked,
+  isAigc:$('videoAigc').checked};
+ if(platform==='youtube'){o.assetRef=$('videoR2').value.trim();o.privacyStatus=$('videoPrivacy').value;}
+ else{o.videoUrl=$('videoPublicUrl').value.trim();if(platform==='tiktok')o.privacyLevel=$('videoPrivacy').value;}
+ return o;
+}
+function videoFingerprint(v){return JSON.stringify(v)}
+$('videoPreviewBtn').addEventListener('click',()=>{
+ try{
+  if(!$('videoQa').checked||!$('videoMedia').checked||!$('videoApproval').checked)throw Error('3つの確認・承認をすべてチェックしてください');
+  if(!videoCampaignId)videoCampaignId='mirror_'+crypto.randomUUID().replaceAll('-','');
+  const v=collectVideo();
+  if(!v.title||!v.caption||!(v.assetRef||v.videoUrl))throw Error('タイトル・本文・承認済み動画を入力してください');
+  videoApprovedPreview=videoFingerprint(v);
+  $('videoResult').textContent='【登録前の確認】\n'+v.platform+' / '+v.title+'\n日本時間：'+new Date(v.runAtUTC).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+
+    '\n公開範囲：'+(v.privacyStatus||v.privacyLevel||'Reels')+'\n動画：'+(v.assetRef||v.videoUrl)+'\n本文：'+v.caption+
+    '\n\nこれは予約内容の確認です。実SNSへの投稿成功ではありません。';
+  $('videoSubmit').disabled=false;
+ }catch(e){$('videoResult').textContent='確認できません：'+e.message}
+});
+$('videoForm').addEventListener('submit',async e=>{
+ e.preventDefault();$('videoSubmit').disabled=true;
+ try{
+  if(!$('token').value)throw Error('管理者トークンが必要です');
+  const data=collectVideo();
+  if(!videoApprovedPreview||videoFingerprint(data)!==videoApprovedPreview)throw Error('内容が変更されています。もう一度確認してください');
+  const r=await readable(await fetch(endpoint()+'/video/jobs',{method:'POST',headers:headers(),body:JSON.stringify(data)}));
+  $('videoResult').textContent='登録結果：'+r.status+' / ID：'+r.id+
+    (r.liveReady?'\n認証設定項目は揃っていますが、実投稿成功はまだ未確認です。':'\n現在は本番送信の認証・公開設定が未完了です。');
+  videoCampaignId='';videoApprovedPreview='';$('videoQa').checked=false;$('videoMedia').checked=false;$('videoApproval').checked=false;
+ }catch(err){$('videoResult').textContent='予約登録できませんでした：'+err.message}
+});
+$('videoRefresh').addEventListener('click',async()=>{
+ $('videoJobs').textContent='取得中…';
+ try{
+  if(!$('token').value)throw Error('管理者トークンが必要です');
+  const r=await readable(await fetch(endpoint()+'/video/jobs',{headers:headers()}));
+  $('videoJobs').textContent=JSON.stringify((r.jobs||[]).map(x=>({
+    platform:x.platform,title:x.title,runAtUTC:x.runAtUTC,status:x.status,phase:x.phase,
+    providerId:x.providerId,publishedId:x.publishedId,lastError:x.lastError
+  })),null,2);
+ }catch(e){$('videoJobs').textContent='取得失敗：'+e.message}
+});
+
 $('refresh').addEventListener('click',async()=>{
  $('jobs').textContent='取得中…';
  try{
