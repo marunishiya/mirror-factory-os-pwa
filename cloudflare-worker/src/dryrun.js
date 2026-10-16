@@ -1,5 +1,6 @@
 import {processLiveDue,validateLive,liveAuthorized} from './live-publishing.js';
 import {videoReadiness} from './video-official.js';
+import {videoTablesReady,registerVideoJob,listVideoJobs,cancelVideoJob,dispatchVideoDue,reconcileVideoPending} from './video-queue.js';
 /**
  * MIRROR SOCIAL ENGINE | Worker v0.6 independent SNS pilot, live off by default
  * D1 binding: DB => mirror-social-db
@@ -83,7 +84,7 @@ async function handler(request,env){
   }
   if(request.method==='GET'&&(path==='/'||path==='/health')){
     const dbReady=await readyDB(env.DB);
-    return json({service:'MIRROR SOCIAL ENGINE',version:'0.6-optional-live-pilot',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:liveAuthorized(env,'bluesky')||liveAuthorized(env,'mastodon'),snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
+    return json({service:'MIRROR SOCIAL ENGINE',version:'0.8-video-reservation-gated',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:liveAuthorized(env,'bluesky')||liveAuthorized(env,'mastodon'),snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
   }
   if(request.method==='GET'&&path==='/channels'){
     return json({channels:CHANNELS.map(id=>({id,connected:false,autoPublishEnabled:false})),note:{autoPublishEnabled:false,mode:'manual_handoff'}},200,origin);
@@ -93,6 +94,29 @@ async function handler(request,env){
   if(!await readyDB(env.DB))return json({error:'storage_unavailable'},503,origin);
   if(request.method==='GET'&&path==='/video-readiness'){
     return json(videoReadiness(env),200,origin);
+  }
+  if(request.method==='GET'&&path==='/video/jobs'){
+    if(!await videoTablesReady(env.DB))return json({error:'video_schema_unavailable'},503,origin);
+    return json({jobs:await listVideoJobs(env.DB),enabled:env.VIDEO_QUEUE_ENABLED==='true',autoPublishConfigured:env.LIVE_PUBLISHING_ENABLED==='true'&&env.VIDEO_LIVE_ENABLED==='true'&&env.VIDEO_DISPATCH_APPROVED==='true'},200,origin);
+  }
+  if(request.method==='POST'&&path==='/video/jobs'){
+    let body;
+    try{body=await readLimitedBody(request)}catch{return json({error:'invalid_json'},400,origin)}
+    if(body===null)return json({error:'body_too_large'},413,origin);
+    let parsed;try{parsed=JSON.parse(body)}catch{return json({error:'invalid_json'},400,origin)}
+    try{
+      const result=await registerVideoJob(env.DB,parsed,env);
+      return json(result,result.created?201:200,origin);
+    }catch(e){
+      const code=String(e?.message||'video_job_failed');
+      const status=code==='video_queue_disabled'||code==='video_schema_unavailable'?503:code==='video_campaign_conflict'?409:400;
+      return json({error:code},status,origin);
+    }
+  }
+  const vc=path.match(/^\\/video\\/jobs\\/([a-f0-9-]{36})\\/cancel$/);
+  if(request.method==='POST'&&vc){
+    if(!await videoTablesReady(env.DB))return json({error:'video_schema_unavailable'},503,origin);
+    return json({cancelled:await cancelVideoJob(env.DB,vc[1])},200,origin);
   }
   if(request.method==='GET'&&path==='/jobs'){
     const r=await env.DB.prepare('SELECT id,campaign_id,platform,title,run_at_utc,mode,status,attempts,created_at,updated_at FROM jobs ORDER BY created_at DESC LIMIT 100').all();
@@ -170,6 +194,10 @@ export default {
     ctx.waitUntil((async()=>{
       await processDue(env.DB,now);
       if(env.LIVE_PUBLISHING_ENABLED==='true')await processLiveDue(env.DB,env,now);
+      // Isolated media queue; no provider traffic without three manual switches
+      // and the correct official platform credentials.
+      await reconcileVideoPending(env.DB,env,now);
+      await dispatchVideoDue(env.DB,env,now);
     })());
   }
 };
