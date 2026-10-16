@@ -82,7 +82,7 @@ async function handler(request,env){
   }
   if(request.method==='GET'&&(path==='/'||path==='/health')){
     const dbReady=await readyDB(env.DB);
-    return json({service:'MIRROR SOCIAL ENGINE',version:'0.6-optional-live-pilot',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:false,snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
+    return json({service:'MIRROR SOCIAL ENGINE',version:'0.6-optional-live-pilot',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:liveAuthorized(env,'bluesky')||liveAuthorized(env,'mastodon'),snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
   }
   if(request.method==='GET'&&path==='/channels'){
     return json({channels:CHANNELS.map(id=>({id,connected:false,autoPublishEnabled:false})),note:{autoPublishEnabled:false,mode:'manual_handoff'}},200,origin);
