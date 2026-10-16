@@ -61,5 +61,23 @@ await check('repeated cancellation does not claim again',async()=>{
  const {response,json}=await request('/jobs/'+id+'/cancel',{method:'POST',headers:auth});
  assert.equal(response.status,200);assert.equal(json.cancelled,false);
 });
-console.log('RESULT Cloudflare local D1 '+count+'/9 PASS');
-if(count!==9)process.exitCode=1;
+await check('local Cron fires DRY-RUN job with D1 atomic status update',async()=>{
+ const newJob={...job,campaignId:'local_d1_cron_002',runAtUTC:new Date(Date.now()+60000).toISOString().replace(/\\.\\d{3}Z$/,'Z')};
+ const created=await request('/jobs',{method:'POST',body:newJob,headers:auth});
+ assert.equal(created.response.status,201);
+ const queuedId=created.json.id;
+ const simulatedAt=Date.now()+120000;
+ const response=await fetch(base+'/cdn-cgi/local/scheduled?time='+simulatedAt+'&cron=*%20*%20*%20*%20*');
+ assert.equal(response.status,200);
+ let final;
+ for(let attempt=0;attempt<20;attempt++){
+  final=await request('/jobs',{headers:auth});
+  if(final.json.jobs.some(x=>x.id===queuedId&&x.status==='simulated'))break;
+  await new Promise(resolve=>setTimeout(resolve,150));
+ }
+ const item=final.json.jobs.find(x=>x.id===queuedId);
+ assert.equal(item?.status,'simulated');
+ assert.equal(item?.attempts,1);
+});
+console.log('RESULT Cloudflare local D1 '+count+'/10 PASS');
+if(count!==10)process.exitCode=1;
