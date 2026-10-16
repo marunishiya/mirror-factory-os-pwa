@@ -170,3 +170,40 @@ export async function uploadYoutubeVideo(job,env,transport=fetch){
  return {status:'SUBMITTED',providerId:String(result.id),privacy,
   note:'YouTube accepted the video; confirm processing and live visibility separately'};
 }
+
+/**
+ * No external calls. Shows installation prerequisites, not account connection.
+ * "ready" is intentionally NOT returned: tokens being present do not prove
+ * OAuth scopes, app audit, successful upload, or delivery.
+ */
+export function videoReadiness(env={}){
+ const switchOn=env.LIVE_PUBLISHING_ENABLED==='true'&&env.VIDEO_LIVE_ENABLED==='true';
+ const prefix=typeof env.VIDEO_PUBLIC_PREFIX==='string'&&env.VIDEO_PUBLIC_PREFIX.startsWith('https://')&&
+  env.VIDEO_PUBLIC_PREFIX.endsWith('/');
+ const report=(requirements)=>({
+  configured:requirements.every(([_,ok])=>Boolean(ok)),
+  missing:requirements.filter(([_,ok])=>!ok).map(([k])=>k),
+  connected:false,publishingVerified:false
+ });
+ return {
+  videoPublishingSwitchOn:switchOn,
+  note:'Configured does NOT mean authenticated, app-audited, deployed or published.',
+  youtube:report([
+   ['live_approval',switchOn],['google_oauth_client',env.GOOGLE_CLIENT_ID&&env.GOOGLE_CLIENT_SECRET],
+   ['youtube_refresh_token',env.YOUTUBE_REFRESH_TOKEN],['video_r2_binding',env.VIDEO_R2?.get],
+   ['youtube_public_audit_confirmed',env.YOUTUBE_PUBLIC_AUDIT_CONFIRMED==='true']
+  ]),
+  instagram:report([
+   ['live_approval',switchOn],['instagram_access_token',env.INSTAGRAM_ACCESS_TOKEN],
+   ['instagram_professional_account_id',/^\d{6,25}$/.test(String(env.INSTAGRAM_IG_USER_ID||''))],
+   ['graph_api_version',/^v\d+\.\d+$/.test(String(env.INSTAGRAM_GRAPH_VERSION||''))],
+   ['public_video_prefix',prefix],['instagram_permissions_confirmed',env.INSTAGRAM_CONTENT_PUBLISH_SCOPE_CONFIRMED==='true']
+  ]),
+  tiktok:report([
+   ['live_approval',switchOn],['tiktok_user_access_token',env.TIKTOK_USER_ACCESS_TOKEN],
+   ['public_video_prefix',prefix],['tiktok_domain_verified',env.TIKTOK_DOMAIN_VERIFIED==='true'],
+   ['tiktok_app_audited',env.TIKTOK_APP_AUDITED==='true'],
+   ['tiktok_publish_scope_confirmed',env.TIKTOK_VIDEO_PUBLISH_SCOPE_CONFIRMED==='true']
+  ])
+ };
+}
