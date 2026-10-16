@@ -62,7 +62,7 @@ await check('repeated cancellation does not claim again',async()=>{
  assert.equal(response.status,200);assert.equal(json.cancelled,false);
 });
 await check('local Cron fires DRY-RUN job with D1 atomic status update',async()=>{
- const newJob={...job,campaignId:'local_d1_cron_002',runAtUTC:new Date(Date.now()+60000).toISOString().replace(/\\.\\d{3}Z$/,'Z')};
+ const newJob={...job,campaignId:'local_d1_cron_002',runAtUTC:new Date(Date.now()+60000).toISOString().slice(0,19)+'Z'};
  const created=await request('/jobs',{method:'POST',body:newJob,headers:auth});
  assert.equal(created.response.status,201);
  const queuedId=created.json.id;
