@@ -44,6 +44,10 @@ class DB {
      if(x.status!=='queued'||x.run_at_utc>args[2])return {meta:{changes:0}};
      x.status='dispatching';x.attempts++;x.updated_at=args[0];return {meta:{changes:1}}
     }
+    if(sql.startsWith('UPDATE video_jobs SET status=?,phase=?,published_id=?')){
+     if(x.status!==args[5])return {meta:{changes:0}};
+     x.status=args[0];x.phase=args[1];x.published_id=args[2];x.updated_at=args[3];return {meta:{changes:1}};
+    }
     if(sql.startsWith('UPDATE video_jobs SET status=?,phase=?')){
      if(x.status!==args[5])return {meta:{changes:0}};
      x.status=args[0];x.phase=args[1];x.provider_id=args[2];x.updated_at=args[3];return {meta:{changes:1}}
