@@ -1,0 +1,24 @@
+name: MIRROR SNS publishing preflight tests
+
+on:
+  pull_request:
+    paths:
+      - 'ops/metricool-preflight.mjs'
+      - 'ops/test/metricool-preflight.test.mjs'
+      - '.github/workflows/mirror-sns-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test publishing status and error detection
+        run: node --test ops/test/metricool-preflight.test.mjs
