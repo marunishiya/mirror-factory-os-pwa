@@ -16,7 +16,7 @@ class MockD1{
      throw Error('Unexpected query '+sql);
     },
     async run(previous=0){
-     if(sql.includes("status='dispatching'")){const row=db.jobs.find(x=>x.id===args[1]&&x.status==='queued'&&x.mode==='live'&&x.run_at_utc<=args[2]);if(!row)return {meta:{changes:0}};row.status='dispatching';row.attempts++;return {meta:{changes:1}}}
+     if(sql.includes("SET status='dispatching'")){const row=db.jobs.find(x=>x.id===args[1]&&x.status==='queued'&&x.mode==='live'&&x.run_at_utc<=args[2]);if(!row)return {meta:{changes:0}};row.status='dispatching';row.attempts++;return {meta:{changes:1}}}
      if(sql.includes("status='published'")){const row=db.jobs.find(x=>x.id===args[1]&&x.status==='dispatching');if(!row)return {meta:{changes:0}};row.status='published';return {meta:{changes:1}}}
      if(sql.includes("status='needs_review'")){const row=db.jobs.find(x=>x.id===args[1]&&x.status==='dispatching');if(!row)return {meta:{changes:0}};row.status='needs_review';row.last_error='delivery_unconfirmed';return {meta:{changes:1}}}
      if(sql.includes('INSERT INTO job_events')){if(!previous)return {meta:{changes:0}};db.events.push({id:args[0],event:args[1],detail:args[2]});return {meta:{changes:1}}}
