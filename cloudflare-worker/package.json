@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/dryrun.test.mjs && node test/bootstrap.test.mjs && node test/safety.test.mjs && node test/platforms.test.mjs && node test/live-publishing.test.mjs && node test/live-registration.test.mjs && node test/video-official.test.mjs && node scripts/audit.mjs"
+    "test": "node test/dryrun.test.mjs && node test/bootstrap.test.mjs && node test/safety.test.mjs && node test/platforms.test.mjs && node test/live-publishing.test.mjs && node test/live-registration.test.mjs && node test/video-official.test.mjs && node test/pwa-inline.test.mjs && node scripts/audit.mjs"
   }
 }
