@@ -1,4 +1,4 @@
-# MIRROR SOCIAL ENGINE 原因調査・改善記録
+> 更新: 本PRにはYouTube専用のOAuth・動画転送・公開予約・スマホ画面を追加しました。以下は追加実装前に確認した旧v0.4の原因記録です。現在の実装範囲・本番設定・制約は cloudflare-worker/YOUTUBE_SETUP_JA.md を参照してください。新規21件と既存29件の計50テスト、旧監査2チェックがローカルで通過。Wrangler 4.151.1の deploy --dry-run は終了コード0で成功。本番配備・実OAuth・実投稿は未実施です。旧手動ActionsはZIP解凍を廃止し通常ソースを検証するよう修正しましたが、新しいYouTube配備を自動実行する経路は追加していません。\n\n# MIRROR SOCIAL ENGINE 原因調査・改善記録
 確認日: 2026-10-16（日本時間）
 
 ## 結論
