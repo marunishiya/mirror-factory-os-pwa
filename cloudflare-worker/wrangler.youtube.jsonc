@@ -1,0 +1,18 @@
+{
+  // Opt-in review configuration. Existing dry-run deploy workflow does not use this file.
+  "name": "mirror-social-scheduler",
+  "main": "src/youtube-worker.js",
+  "compatibility_date": "2026-10-14",
+  "workers_dev": true,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "mirror-social-db",
+    "database_id": "e76938e0-9c61-4a25-b84c-452930f698f3",
+    "migrations_dir": "migrations"
+  }],
+  "vars": {
+    "LIVE_PUBLISHING_ENABLED": "false",
+    "YOUTUBE_CHANNEL_ID": "UCJHaEHAqy0UIivYWMLwqdiQ",
+    "GOOGLE_REDIRECT_URI": "https://mirror-social-scheduler.projectmirror-ai.workers.dev/oauth/youtube/callback"
+  }
+}
