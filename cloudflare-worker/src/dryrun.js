@@ -1,4 +1,5 @@
 import {processLiveDue,validateLive,liveAuthorized} from './live-publishing.js';
+import {videoReadiness} from './video-official.js';
 /**
  * MIRROR SOCIAL ENGINE | Worker v0.6 independent SNS pilot, live off by default
  * D1 binding: DB => mirror-social-db
@@ -90,6 +91,9 @@ async function handler(request,env){
   if(typeof env.ADMIN_TOKEN!=='string'||env.ADMIN_TOKEN.length<32)return json({error:'admin_access_not_configured'},503,origin);
   if(!authorized(request,env))return json({error:'unauthorized'},401,origin);
   if(!await readyDB(env.DB))return json({error:'storage_unavailable'},503,origin);
+  if(request.method==='GET'&&path==='/video-readiness'){
+    return json(videoReadiness(env),200,origin);
+  }
   if(request.method==='GET'&&path==='/jobs'){
     const r=await env.DB.prepare('SELECT id,campaign_id,platform,title,run_at_utc,mode,status,attempts,created_at,updated_at FROM jobs ORDER BY created_at DESC LIMIT 100').all();
     return json({jobs:r.results||[],dryRunOnly:true},200,origin);
