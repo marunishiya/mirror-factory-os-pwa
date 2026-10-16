@@ -3,9 +3,7 @@
   "main": "src/index.js",
   "compatibility_date": "2026-10-14",
   "workers_dev": true,
-  // Future Cron activation on explicit deployment approval; nothing currently deployed.
   "triggers": {"crons": ["* * * * *"]},
-  // Startup is fail-closed. Do not change without owner approval and confirmed D1 schema.
   "vars": {
     "VIDEO_QUEUE_ENABLED": "false",
     "LIVE_PUBLISHING_ENABLED": "false",
