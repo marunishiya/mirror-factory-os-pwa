@@ -1,0 +1,8 @@
+{
+  "name": "mirror-social-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/dryrun.test.mjs && node test/bootstrap.test.mjs && node scripts/audit.mjs && node --test test/youtube.test.mjs"
+  }
+}

@@ -31,12 +31,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Verify locked source archive
+          node-version: '24'
+      - name: Verify tracked Worker source
         shell: bash
         run: |
-          echo 'e27bb7c64212476963ea0282af7e0c0a6fdf10bbf886bd3b0bab29ddde094159  mirror-worker-code-v04.zip' | sha256sum --check --status
-          unzip -q mirror-worker-code-v04.zip
           test -f cloudflare-worker/src/bootstrap.js
           test -f cloudflare-worker/src/dryrun.js
           test -f cloudflare-worker/wrangler.jsonc
