@@ -1,0 +1,25 @@
+name: MIRROR Worker tests only
+"on":
+  pull_request:
+    paths:
+      - 'cloudflare-worker/**'
+      - '.github/workflows/mirror-worker-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Original and YouTube safety tests (no credentials)
+        run: npm --prefix cloudflare-worker test
+      - name: Compile YouTube Worker without deploying
+        working-directory: cloudflare-worker
+        run: npx --yes wrangler@4.151.1 deploy --dry-run --config wrangler.youtube.jsonc
