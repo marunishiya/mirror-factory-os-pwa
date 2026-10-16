@@ -113,7 +113,7 @@ async function handler(request,env){
       return json({error:code},status,origin);
     }
   }
-  const vc=path.match(/^\\/video\\/jobs\\/([a-f0-9-]{36})\\/cancel$/);
+  const vc=path.match(/^\/video\/jobs\/([a-f0-9-]{36})\/cancel$/);
   if(request.method==='POST'&&vc){
     if(!await videoTablesReady(env.DB))return json({error:'video_schema_unavailable'},503,origin);
     return json({cancelled:await cancelVideoJob(env.DB,vc[1])},200,origin);
