@@ -123,7 +123,8 @@ await check('TikTok verified completion becomes published, pending does not',asy
  await reconcileVideoPending(db,tt,now,async()=>Response.json({error:{code:'ok'},data:{status:'PROCESSING_DOWNLOAD'}}));
  assert.equal(db.rows[0].status,'processing');
  await reconcileVideoPending(db,tt,next(301000),async()=>Response.json({error:{code:'ok'},data:{status:'PUBLISH_COMPLETE',publicaly_available_post_id:['1234']}}));
- assert.equal(db.rows[0].status,'published');
+ assert.equal(db.rows[0].status,'verified_nonpublic');
+ assert.equal(db.rows[0].published_id,'1234');
 });
 await check('YouTube receipt is processing until read-only status confirms',async()=>{
  const db=new DB([fixture('youtube')]);let calls=0;
