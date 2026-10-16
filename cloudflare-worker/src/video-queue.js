@@ -143,10 +143,23 @@ export async function dispatchVideoDue(db,env,now,transport=fetch){
  }
  return {dispatched,blocked:null};
 }
+async function markVerified(db,row,status,phase,verifiedId,now){
+ const [changed]=await db.batch([
+  db.prepare("UPDATE video_jobs SET status=?,phase=?,published_id=?,last_error='',updated_at=? WHERE id=? AND status=?")
+    .bind(status,phase,verifiedId||row.published_id||'',now,row.id,row.status),
+  db.prepare("INSERT INTO video_job_events(job_id,event,detail,created_at) SELECT ?,?,?,? WHERE changes()=1")
+    .bind(row.id,status,phase,now)
+ ]);
+ return Boolean(changed.meta?.changes);
+}
 export async function reconcileVideoPending(db,env,now,transport=fetch){
  if(!await videoTablesReady(db))return {checked:0,blocked:'video_schema_unavailable'};
  if(env.LIVE_PUBLISHING_ENABLED!=='true'||env.VIDEO_LIVE_ENABLED!=='true'||env.VIDEO_DISPATCH_APPROVED!=='true')
   return {checked:0,blocked:'live_dispatch_disabled'};
+ // The deadline never initiates another POST. It only requests manual review.
+ const exhausted=await db.prepare("SELECT * FROM video_jobs WHERE status IN ('processing','submitted') AND check_attempts>=288 ORDER BY updated_at LIMIT 5").all();
+ for(const row of exhausted.results||[])await uncertain(db,row,now,row.status);
+
  const open=await db.prepare("SELECT * FROM video_jobs WHERE status IN ('processing','submitted') AND (next_check_utc='' OR next_check_utc<=?) ORDER BY updated_at LIMIT 5").bind(now).all();
  let checked=0;
  for(const row of open.results||[]){
@@ -154,7 +167,7 @@ export async function reconcileVideoPending(db,env,now,transport=fetch){
   // Rate limit: any provider read error is deferred. Reads are safe to retry.
   const next=new Date(Date.parse(now)+5*60000).toISOString().slice(0,19)+'Z';
   const [claim]=await db.batch([
-   db.prepare("UPDATE video_jobs SET next_check_utc=?,check_attempts=check_attempts+1,updated_at=? WHERE id=? AND status=? AND (next_check_utc='' OR next_check_utc<=?) AND check_attempts<144").bind(next,now,row.id,row.status,now),
+   db.prepare("UPDATE video_jobs SET next_check_utc=?,check_attempts=check_attempts+1,updated_at=? WHERE id=? AND status=? AND (next_check_utc='' OR next_check_utc<=?) AND check_attempts<288").bind(next,now,row.id,row.status,now),
    db.prepare("INSERT INTO video_job_events(job_id,event,detail,created_at) SELECT ?,'checking','read_only_status_poll',? WHERE changes()=1").bind(row.id,now)
   ]);
   if(!claim.meta?.changes)continue;
@@ -180,15 +193,16 @@ export async function reconcileVideoPending(db,env,now,transport=fetch){
     }
    }else if(row.phase==='instagram_verification'){
     result=await instagramPublishedMediaStatus(row.published_id,env,transport);
-    if(result.verified)await transition(db,row,'published','verified_instagram',row.provider_id,now,'submitted');
+    if(result.verified)await markVerified(db,row,'published','verified_instagram',row.published_id,now);
    }else if(row.phase==='tiktok_status'){
     result=await tiktokVideoStatus(row.provider_id,env,transport);
-    if(result.published)await transition(db,row,'published','verified_tiktok',row.provider_id,now,'processing');
+    if(result.published)await markVerified(db,row,row.privacy_level==='PUBLIC_TO_EVERYONE'?'published':'verified_nonpublic',
+      'verified_tiktok',result.providerIds?.[0]||'',now);
     else if(result.failed)await uncertain(db,row,now,'processing');
    }else if(row.phase==='youtube_processing'){
     result=await youtubeVideoStatus(row.provider_id,env,transport);
     if(result.rejected)await uncertain(db,row,now,'processing');
-    else if(result.processed)await transition(db,row,result.privacyStatus==='public'?'published':'verified_nonpublic','verified_youtube',row.provider_id,now,'processing');
+    else if(result.processed)await markVerified(db,row,result.privacyStatus==='public'?'published':'verified_nonpublic','verified_youtube',row.provider_id,now);
    }
   }catch{
    // Read-only polling fails temporarily; allow a later poll, NEVER resend POST.
