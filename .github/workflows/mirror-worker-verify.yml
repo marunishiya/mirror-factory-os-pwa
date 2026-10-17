@@ -51,3 +51,24 @@ jobs:
           npx --yes wrangler@4.151.0 deploy --dry-run --config wrangler.jsonc
           cp src/dryrun.js src/index.js
           npx --yes wrangler@4.151.0 deploy --dry-run --config wrangler.jsonc
+
+      - name: Exercise actual isolated LOCAL D1 through HTTP (never deploy)
+        shell: bash
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          set -euo pipefail
+          cd cloudflare-worker
+          export MIRROR_LOCAL_PERSIST="$RUNNER_TEMP/mirror-local-d1"
+          mkdir -p "$MIRROR_LOCAL_PERSIST"
+          npx --yes wrangler@4.151.0 d1 execute mirror-social-local-test-db --local --config wrangler.local-test.jsonc --persist-to "$MIRROR_LOCAL_PERSIST" --file test/schema.local-test.sql
+          npx --yes wrangler@4.151.0 dev --local --test-scheduled --ip 127.0.0.1 --port 8789 --config wrangler.local-test.jsonc --persist-to "$MIRROR_LOCAL_PERSIST" --var ADMIN_TOKEN:mirror-local-test-admin-token-20261016 --var VIDEO_QUEUE_ENABLED:true --var VIDEO_PUBLIC_PREFIX:https://media.example.com/approved/ > "$RUNNER_TEMP/mirror-local-wrangler.log" 2>&1 &
+          WORKER_PID=$!
+          trap 'kill "$WORKER_PID" 2>/dev/null || true' EXIT
+          if ! MIRROR_LOCAL_URL=http://127.0.0.1:8789 node test/local-d1.test.mjs; then
+            tail -n 90 "$RUNNER_TEMP/mirror-local-wrangler.log"
+            exit 1
+          fi
+          kill "$WORKER_PID" 2>/dev/null || true
+          wait "$WORKER_PID" 2>/dev/null || true
+          node -e "console.log('PASS local worker process cleanly stopped')"

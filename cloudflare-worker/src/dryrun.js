@@ -1,5 +1,8 @@
+import {processLiveDue,validateLive,liveAuthorized} from './live-publishing.js';
+import {videoReadiness} from './video-official.js';
+import {videoTablesReady,registerVideoJob,listVideoJobs,cancelVideoJob,dispatchVideoDue,reconcileVideoPending} from './video-queue.js';
 /**
- * MIRROR SOCIAL ENGINE | Worker v0.5 development | DRY RUN ONLY
+ * MIRROR SOCIAL ENGINE | Worker v0.6 independent SNS pilot, live off by default
  * D1 binding: DB => mirror-social-db
  * Optional future secret: ADMIN_TOKEN (at least 32 characters)
  * Public: GET /, /health, /channels. Private routes LOCKED unless ADMIN_TOKEN exists.
@@ -81,7 +84,7 @@ async function handler(request,env){
   }
   if(request.method==='GET'&&(path==='/'||path==='/health')){
     const dbReady=await readyDB(env.DB);
-    return json({service:'MIRROR SOCIAL ENGINE',version:'0.5-dry-run',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:false,snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
+    return json({service:'MIRROR SOCIAL ENGINE',version:'0.8-video-reservation-gated',status:dbReady?'ready':'storage_unavailable',databaseReady:dbReady,publishingEnabled:liveAuthorized(env,'bluesky')||liveAuthorized(env,'mastodon'),snsConnected:false,cronConfigured:'not_verified'},dbReady?200:503,origin);
   }
   if(request.method==='GET'&&path==='/channels'){
     return json({channels:CHANNELS.map(id=>({id,connected:false,autoPublishEnabled:false})),note:{autoPublishEnabled:false,mode:'manual_handoff'}},200,origin);
@@ -89,9 +92,53 @@ async function handler(request,env){
   if(typeof env.ADMIN_TOKEN!=='string'||env.ADMIN_TOKEN.length<32)return json({error:'admin_access_not_configured'},503,origin);
   if(!authorized(request,env))return json({error:'unauthorized'},401,origin);
   if(!await readyDB(env.DB))return json({error:'storage_unavailable'},503,origin);
+  if(request.method==='GET'&&path==='/video-readiness'){
+    return json(videoReadiness(env),200,origin);
+  }
+  if(request.method==='GET'&&path==='/video/jobs'){
+    if(!await videoTablesReady(env.DB))return json({error:'video_schema_unavailable'},503,origin);
+    return json({jobs:await listVideoJobs(env.DB),enabled:env.VIDEO_QUEUE_ENABLED==='true',autoPublishConfigured:env.LIVE_PUBLISHING_ENABLED==='true'&&env.VIDEO_LIVE_ENABLED==='true'&&env.VIDEO_DISPATCH_APPROVED==='true'},200,origin);
+  }
+  if(request.method==='POST'&&path==='/video/jobs'){
+    let body;
+    try{body=await readLimitedBody(request)}catch{return json({error:'invalid_json'},400,origin)}
+    if(body===null)return json({error:'body_too_large'},413,origin);
+    let parsed;try{parsed=JSON.parse(body)}catch{return json({error:'invalid_json'},400,origin)}
+    try{
+      const result=await registerVideoJob(env.DB,parsed,env);
+      return json(result,result.created?201:200,origin);
+    }catch(e){
+      const code=String(e?.message||'video_job_failed');
+      const status=code==='video_queue_disabled'||code==='video_schema_unavailable'?503:code==='video_campaign_conflict'?409:400;
+      return json({error:code},status,origin);
+    }
+  }
+  const vc=path.match(/^\/video\/jobs\/([a-f0-9-]{36})\/cancel$/);
+  if(request.method==='POST'&&vc){
+    if(!await videoTablesReady(env.DB))return json({error:'video_schema_unavailable'},503,origin);
+    return json({cancelled:await cancelVideoJob(env.DB,vc[1])},200,origin);
+  }
   if(request.method==='GET'&&path==='/jobs'){
     const r=await env.DB.prepare('SELECT id,campaign_id,platform,title,run_at_utc,mode,status,attempts,created_at,updated_at FROM jobs ORDER BY created_at DESC LIMIT 100').all();
     return json({jobs:r.results||[],dryRunOnly:true},200,origin);
+  }
+  if(request.method==='POST'&&path==='/jobs/live'){
+    if(env.LIVE_PUBLISHING_ENABLED!=='true')return json({error:'live_publishing_disabled'},503,origin);
+    let body;
+    try {body=await readLimitedBody(request);}
+    catch {return json({error:'invalid_json'},400,origin);}
+    if(body===null)return json({error:'body_too_large'},413,origin);
+    let job;
+    try {job=validateLive(JSON.parse(body));}
+    catch(e){return json({error:e.message||'invalid_live_job'},400,origin);}
+    if(!liveAuthorized(env,job.platform))return json({error:'platform_credentials_missing'},503,origin);
+    const now=new Date().toISOString(),id=crypto.randomUUID();
+    const [insert]=await env.DB.batch([
+      env.DB.prepare(`INSERT OR IGNORE INTO jobs(id,campaign_id,platform,title,caption,asset_ref,run_at_utc,mode,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'live','queued',?,?)`).bind(id,job.campaignId,job.platform,job.title,job.caption,'',job.runAtUTC,now,now),
+      env.DB.prepare("INSERT INTO job_events(job_id,event,detail,created_at) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM jobs WHERE id=?)").bind(id,'created','LIVE PILOT: approved, queued only',now,id)
+    ]);
+    if(!insert.meta?.changes)return json({status:'duplicate',publishingEnabled:true},200,origin);
+    return json({id,status:'queued',mode:'live',publishingEnabled:true},201,origin);
   }
   if(request.method==='POST'&&path==='/jobs'){
     let body;
@@ -143,6 +190,14 @@ export default {
   async scheduled(controller,env,ctx){
     // Persisted run_at_utc is second-precision ISO-Z; use the same precision in comparisons.
     const now=new Date(controller.scheduledTime).toISOString().replace(/\.\d{3}Z$/,'Z');
-    ctx.waitUntil(processDue(env.DB,now));
+    // The two job modes cannot overlap. Default config only simulates; no HTTP.
+    ctx.waitUntil((async()=>{
+      await processDue(env.DB,now);
+      if(env.LIVE_PUBLISHING_ENABLED==='true')await processLiveDue(env.DB,env,now);
+      // Isolated media queue; no provider traffic without three manual switches
+      // and the correct official platform credentials.
+      await reconcileVideoPending(env.DB,env,now);
+      await dispatchVideoDue(env.DB,env,now);
+    })());
   }
 };

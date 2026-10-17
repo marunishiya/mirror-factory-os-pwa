@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {Script} from 'node:vm';
+const html=readFileSync(new URL('../../social-direct-pilot.html',import.meta.url),'utf8');
+const match=html.match(/<script type="module">([\s\S]*?)<\/script>/);
+assert.ok(match,'standalone module script must exist');
+new Script(match[1],{filename:'social-direct-pilot.html.js'});
+assert.ok(html.includes('id="videoForm"'));
+assert.ok(html.includes('id="videoResult"'));
+assert.ok(match[1].includes("endpoint()+'/video/jobs'"));
+assert.ok(match[1].includes("videoFingerprint(data)!==videoApprovedPreview"),'must reapprove changed content');
+assert.ok(!match[1].includes('localStorage.'),'admin credentials may not be persisted');
+assert.ok(!match[1].includes('sessionStorage.'),'admin credentials may not be persisted');
+assert.ok(match[1].includes("headers:headers()"),'video booking must require admin bearer');
+console.log('RESULT mobile direct SNS form 8/8 PASS');

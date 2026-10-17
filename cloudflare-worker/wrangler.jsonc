@@ -3,6 +3,13 @@
   "main": "src/index.js",
   "compatibility_date": "2026-10-14",
   "workers_dev": true,
+  "triggers": {"crons": ["* * * * *"]},
+  "vars": {
+    "VIDEO_QUEUE_ENABLED": "false",
+    "LIVE_PUBLISHING_ENABLED": "false",
+    "VIDEO_LIVE_ENABLED": "false",
+    "VIDEO_DISPATCH_APPROVED": "false"
+  },
   "d1_databases": [
     {
       "binding": "DB",
