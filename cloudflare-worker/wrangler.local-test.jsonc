@@ -1,0 +1,14 @@
+{
+  // PROJECT MIRROR: isolated local D1 test configuration; never deploy this.
+  "name": "mirror-social-local-test",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-14",
+  "workers_dev": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mirror-social-local-test-db",
+      "database_id": "00000000-0000-4000-8000-000000000001"
+    }
+  ]
+}

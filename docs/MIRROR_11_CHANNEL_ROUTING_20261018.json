@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "1.0.0",
+  "date": "2026-10-18",
+  "status": "DESIGN_ONLY_NOT_CONNECTED",
+  "repoProtection": [
+    "main",
+    "existing-pwa",
+    "localStorage",
+    "production-worker",
+    "production-d1",
+    "canon-master",
+    "backups"
+  ],
+  "defaultPolicy": {
+    "requiresExplicitPublishingApproval": true,
+    "requiresChannelOwnerOAuth": true,
+    "neverAssumePublishedFromScheduleAck": true,
+    "externalPostUnknownOutcome": "needs_review_no_retry",
+    "paidUpgradeAllowed": false,
+    "secretsInFrontendAllowed": false
+  },
+  "buffer": {
+    "freeMaxConnectedChannels": 3,
+    "freeScheduledSlotsPerChannel": 10,
+    "freeApiRequestsPerMonth": 3000,
+    "starterChannels": [
+      "youtube",
+      "instagram",
+      "tiktok"
+    ],
+    "apiEndpoint": "https://api.buffer.com",
+    "requiresActualConnection": true
+  },
+  "channels": [
+    {
+      "key": "youtube",
+      "name": "YouTube Shorts",
+      "engine": "buffer",
+      "stage": 1,
+      "desiredContent": "vertical_video",
+      "requirements": [
+        "youtube_channel_owner",
+        "approved_video",
+        "automatic_mode",
+        "public_url_confirmation"
+      ]
+    },
+    {
+      "key": "instagram",
+      "name": "Instagram Reels",
+      "engine": "buffer",
+      "stage": 1,
+      "desiredContent": "vertical_video",
+      "requirements": [
+        "professional_account",
+        "approved_video",
+        "automatic_mode",
+        "public_url_confirmation"
+      ],
+      "fallback": "notification_requires_user_action"
+    },
+    {
+      "key": "tiktok",
+      "name": "TikTok",
+      "engine": "buffer",
+      "stage": 1,
+      "desiredContent": "vertical_video",
+      "requirements": [
+        "approved_video",
+        "automatic_mode",
+        "public_url_confirmation"
+      ],
+      "fallback": "notification_requires_user_action"
+    },
+    {
+      "key": "threads",
+      "name": "Threads",
+      "engine": "buffer",
+      "stage": 2,
+      "desiredContent": "text_video",
+      "requirements": [
+        "authorized_threads_account",
+        "text_length_checked"
+      ]
+    },
+    {
+      "key": "x",
+      "name": "X",
+      "engine": "buffer",
+      "stage": 2,
+      "desiredContent": "text_video",
+      "requirements": [
+        "authorized_x_account",
+        "text_length_checked"
+      ]
+    },
+    {
+      "key": "bluesky",
+      "name": "Bluesky",
+      "engine": "buffer",
+      "stage": 2,
+      "desiredContent": "text_video",
+      "requirements": [
+        "authorized_bluesky_account",
+        "text_length_checked"
+      ]
+    },
+    {
+      "key": "pinterest",
+      "name": "Pinterest",
+      "engine": "buffer",
+      "stage": 2,
+      "desiredContent": "image_video",
+      "requirements": [
+        "authorized_pinterest_account",
+        "board_selection",
+        "rights_checked"
+      ]
+    },
+    {
+      "key": "facebook",
+      "name": "Facebook Page",
+      "engine": "buffer",
+      "stage": 2,
+      "desiredContent": "text_image_video",
+      "requirements": [
+        "facebook_page_not_personal_profile",
+        "page_admin_access"
+      ]
+    },
+    {
+      "key": "mastodon",
+      "name": "Mastodon",
+      "engine": "buffer",
+      "stage": 2,
+      "desiredContent": "text_video",
+      "requirements": [
+        "server_compatible_account",
+        "server_content_limits_checked"
+      ]
+    },
+    {
+      "key": "tumblr",
+      "name": "Tumblr",
+      "engine": "tumblr_native_schedule",
+      "stage": 3,
+      "desiredContent": "text_image_video",
+      "requirements": [
+        "tumblr_owner_account",
+        "native_schedule",
+        "native_published_url"
+      ],
+      "bufferSupported": false
+    },
+    {
+      "key": "note",
+      "name": "note",
+      "engine": "note_native_or_manual",
+      "stage": 3,
+      "desiredContent": "longform_article",
+      "requirements": [
+        "article_master_review",
+        "manual_publish_or_premium_subscription",
+        "magazine_verified",
+        "native_published_url"
+      ],
+      "bufferSupported": false,
+      "noPaidUpgradeWithoutApproval": true
+    }
+  ],
+  "jobStateMachine": [
+    "draft",
+    "qa_passed",
+    "approved",
+    "scheduling",
+    "scheduled",
+    "verification_pending",
+    "published",
+    "notification_required",
+    "needs_review",
+    "failed",
+    "cancelled",
+    "verified_nonpublic"
+  ]
+}
