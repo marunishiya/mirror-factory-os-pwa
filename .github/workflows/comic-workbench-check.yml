@@ -21,7 +21,7 @@ jobs:
       - name: Publish downloadable test files (not a deployment)
         uses: actions/upload-artifact@v4
         with:
-          name: comic-workbench-offline-v0.5
+          name: comic-workbench-offline-v0.6
           path: labs/comic-workbench/portable-dist/
           if-no-files-found: error
           retention-days: 14
