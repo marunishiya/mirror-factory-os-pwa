@@ -74,14 +74,14 @@ code{overflow-wrap:anywhere}button:focus-visible,select:focus-visible,textarea:f
 (function(){
 "use strict";
 const W=window.ComicWorkbench,H=window.ComicHash,Q=window.ComicBalloonQA,O=window.ComicNativeOcr,S=window.ComicOcrSidecar,$=id=>document.getElementById(id);
-let doc=null,panelId="",image=null,annotations=[],current=0,lastReport=null,ocrToken=0;
+let doc=null,panelId="",image=null,annotations=[],current=0,lastReport=null,ocrToken=0,ocrEvidence=null;
 const canvas=$("imgCanvas"),ctx=canvas.getContext("2d");
 function status(id,msg,kind){
  const elem=$(id);elem.textContent=msg;elem.className=id==="imageState"?"small":"notice"+(kind?" "+kind:"");
 }
 function clearResult(){lastReport=null;$("report").disabled=true;status("result","入力が変更されました。再検査してください。");$("issues").replaceChildren()}
 function resetOcr(){
- ocrToken++;
+ ocrToken++;ocrEvidence=null;
  $("ocrCandidates").replaceChildren();
  const cap=O.availability(window);
  $("ocrTry").disabled=!cap.available||!image;
@@ -111,6 +111,11 @@ function showCandidates(result,sourceName){
      if(!annotations[n]||!window.confirm("画像と照合してください。OCR候補を"+(n+1)+"番に転記しますか？"))return;
      annotations[n].observedText=cand.text;
      annotations[n].humanChecked=false;
+     ocrEvidence={source:result.recognitionSource==="local-desktop-ocr"?
+       "local-desktop-ocr":"native-browser-experimental",
+       engine:String(result.engine||"unknown").slice(0,80),
+       imageSha256:image.sha256,
+       humanReviewRequired:true,modelCertified:false};
      clearResult();renderAnnotations();
      $("ocrStatus").textContent="候補を転記しました。目視確認チェックは未完了です。";
    };
@@ -273,6 +278,7 @@ $("check").onclick=()=>{
   const source=W.sourceReport(doc,panelId).status;
   lastReport=Q.evaluate(doc,panelId,annotations,
     {sha256:image.sha256,width:image.width,height:image.height,bytes:image.bytes},source);
+  if(ocrEvidence)lastReport.ocrAssistance={...ocrEvidence};
   $("report").disabled=false;
   const verdict=lastReport.status;
   status("result","照合結果："+verdict+" ／ 不一致 "+lastReport.errors+
