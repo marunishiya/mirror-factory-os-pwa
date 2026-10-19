@@ -282,7 +282,10 @@ $("compose").onclick=async()=>{
   compositeRecord={filename,sha256:sha,width:a.width,height:a.height,
     originSha256:a.sha256,candidateSha256:b.sha256,roi:{...roi},
     protectedOutsideChangedPixels:check.outside.changed,
-    note:"PNGを端末内で生成。参照MASTER/正式Canonへの変更はありません。"};
+    compositeVerdict:check.verdict,
+    compositeInsideChangedPixels:check.inside.changed,
+    inputCandidateVerdict:comparison.verdict,
+    note:"compositeVerdictは合成PNGの画素検査。result.verdictは元の修正候補の差分検査。Canonの承認ではありません。"};
   const url=URL.createObjectURL(blob),link=document.createElement("a");
   link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
