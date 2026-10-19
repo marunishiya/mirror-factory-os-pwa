@@ -2,7 +2,7 @@
  * Original lab/source unchanged. No deploy, image, credential or external API. */
 "use strict";
 const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
-const root=path.resolve(__dirname,".."),out=path.join(root,"portable-dist");
+const root=path.resolve(__dirname),out=path.join(root,"portable-dist");
 fs.mkdirSync(out,{recursive:true});
 const included=new Set();
 function inlined(name){
