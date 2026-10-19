@@ -50,7 +50,8 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
     <p><a id="imageLab" href="./image-lab.html">画像の部分修正・MASTER参照検査へ →</a></p>
   </section>
   <section>
-    <h2>作業データ保護・復元</h2>
+    <details id="vaultDetail">
+    <summary style="font-weight:700;cursor:pointer;padding:8px 0;min-height:40px">作業データ保護・復元（タップして開く）</summary>
     <p class="small">作業を保存したタイミングで、現在とひとつ前の草稿をこの端末に保持できます。初期設定は<strong>無効</strong>。有効化した端末の別利用者から内容を閲覧される可能性があるため、共有端末では使わないでください。</p>
     <div class="actions">
       <button id="vaultEnable" type="button">端末内の復旧保存を有効化</button>
@@ -61,8 +62,9 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
       <button id="vaultRestorePrevious" type="button">ひとつ前を復元</button>
       <button id="vaultClear" class="danger" type="button">復旧データ2件を消去</button>
     </div>
-    <p id="vaultStatus" role="status" class="small muted">保存状態を確認中です。</p>
+    <p id="vaultStatus" role="status" class="small muted" style="white-space:pre-wrap">保存状態を確認中です。</p>
     <p class="small warning">復旧ポイントは暗号化されません。ブラウザの保存領域が削除されると消失します。重要な作品は必ず「JSON保存」も併用してください。編集中の未保存テキストは復元対象外です。</p>
+    </details>
   </section>
   <section>
     <h2>FACTORY OSから安全に連携</h2>
