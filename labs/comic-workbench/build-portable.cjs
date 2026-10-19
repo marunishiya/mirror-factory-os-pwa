@@ -29,11 +29,14 @@ const index=inlined("index.html"),image=inlined("image-lab.html"),balloon=inline
 if(!index.includes("ComicWorkbench")||!image.includes("ComicImageQA")||
  !image.includes("ComicAuthority")||!image.includes("ComicHash")||
  !balloon.includes("ComicBalloonQA"))throw Error("Missing bundled API");
+fs.copyFileSync(path.join(root,"ocr_sidecar.py"),path.join(out,"ocr_sidecar.py"));
 const guide=[
-"Comic Workbench OFFLINE v0.10",
+"Comic Workbench OFFLINE v0.11",
 "",
 "スマホ用：index.html、image-lab.html、balloon-lab.htmlの3つのHTMLをChrome等で開いてください。",
 "吹き出しQA：原稿JSON→コマ画像→吹き出しをタップ→話者・文字を目視で入力→注釈の照合→JSON保存。",
+"実OCR（PC専用・任意）：Tesseract（jpn/jpn_vert）を別途ローカルに導入したPCで、python3 ocr_sidecar.py --image panel.png --output ocr-result.json --lang jpn を実行。生成JSONと同じPNGをballoon-lab.htmlで読み込むとOCR候補を表示。",
+// Tesseract CLI is NOT bundled. Images and Canon remain local; use user-provided data only.
 "手順：画像ラボ →「練習用画像で試す」→「修正前後を比較する」→「指定範囲だけ合成してPNG保存」。",
 "ZIPの中にある3つのHTMLは同じフォルダに置いてください（画面間リンク用）。",
 "端末がHTMLファイルをブラウザで開けない場合は、PCのChrome/Edgeで開けます。",
