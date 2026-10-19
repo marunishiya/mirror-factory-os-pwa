@@ -78,6 +78,28 @@
       note: "画素差分検査のみ。顔の同一性・美術品質・伏線の意味は自動保証しません。"
     };
   }
+  function composeRegion(before, candidate, width, height, roi) {
+    // Copy only candidate pixels whose center lies inside ROI. Pixels outside ROI
+    // retain their original RGBA bytes exactly; never modify the input buffers.
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1
+        || width*height > 4000000 || !before || !candidate ||
+        before.length !== width*height*4 || candidate.length !== width*height*4) {
+      fail("合成する2画像のサイズとRGBAデータが不正です");
+    }
+    const r=validateRect(roi), out=new Uint8ClampedArray(before);
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+      const inside=(x+.5)/width>=r.x && (x+.5)/width<=r.x+r.width
+        && (y+.5)/height>=r.y && (y+.5)/height<=r.y+r.height;
+      if(inside){
+        const index=(y*width+x)*4;
+        out[index]=candidate[index];
+        out[index+1]=candidate[index+1];
+        out[index+2]=candidate[index+2];
+        out[index+3]=candidate[index+3];
+      }
+    }
+    return out;
+  }
   function sampleChangedPixels(before, after, width, height, tolerance=24) {
     validateSettings({channelTolerance:tolerance});
     if (!Number.isInteger(width)||!Number.isInteger(height)||width<1||height<1||
@@ -124,5 +146,5 @@
     };
   }
   return Object.freeze({DEFAULTS,validateRect,validateSettings,compare,sampleChangedPixels,
-    imageFingerprint,makeReport});
+    imageFingerprint,makeReport,composeRegion});
 });
