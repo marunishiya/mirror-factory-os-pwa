@@ -48,30 +48,83 @@ code{overflow-wrap:anywhere}button:focus-visible,select:focus-visible,textarea:f
 <div id="canvasWrap"><canvas id="imgCanvas" width="900" height="540" aria-label="コマ画像。吹き出しの中心をタップして位置を登録"></canvas></div>
 <p class="small">下で「何番の吹き出しを登録するか」を選んでから、上の画像にある吹き出しの中心をタップしてください。タップ位置は番号付きで表示されます。</p>
 </section>
-<section><h2>③ 目で確認して入力</h2>
+<section><h2>③ 試験的なOCR候補（任意）</h2>
+<p class="small">ブラウザがTextDetectorを提供する場合だけ使用できます。日本語や縦書きへの対応、文字認識の精度は保証されません。自動PASSにはしません。</p>
+<button id="ocrTry" type="button" disabled>この画像の文字候補を検出する</button>
+<p id="ocrStatus" class="notice" role="status">利用可能か確認中です。</p>
+<div id="ocrCandidates"></div>
+</section>
+<section><h2>④ 目で確認して入力</h2>
 <p class="small">右から左／上から下に読む場合など、実画像の位置を見て確認してください。話者欄と転記欄は自動入力しません。</p>
 <div id="annotationList"><p class="small">原稿を選ぶと、セリフ別の確認欄を表示します。</p></div>
 </section>
-<section><h2>④ 照合とレポート</h2>
+<section><h2>⑤ 照合とレポート</h2>
 <div class="row"><button class="primary" type="button" id="check">人が記録した注釈を照合する</button>
 <button type="button" id="report" disabled>検査レポートJSON保存</button>
 <button type="button" id="resetAnnotations">注釈だけ消去</button></div>
 <p id="result" class="notice" role="status">まだ検査していません。</p>
 <div id="issues"></div>
-<p class="small"><strong>重要：</strong>これは人が入力した吹き出し情報と確定原稿の一致検査です。OCRやAIの顔検査、吹き出しの自動認識は未実装です。「注釈の内容が一致」しても実画像を機械が検証したことにはならず、正式Canonの承認や販売用の最終PASSにはしません。</p>
+<p class="small"><strong>重要：</strong>これは人が入力した吹き出し情報と確定原稿の一致検査です。一部ブラウザのみOCR候補の試験取得ができます。AIの顔検査、吹き出し・尻尾の自動認識は未実装です。「注釈の内容が一致」しても実画像を機械が検証したことにはならず、正式Canonの承認や販売用の最終PASSにはしません。</p>
 </section>
 </main>
-<script src="./engine.js"></script><script src="./sha256.js"></script><script src="./balloon-qa.js"></script>
+<script src="./engine.js"></script><script src="./sha256.js"></script><script src="./balloon-qa.js"></script><script src="./native-ocr.js"></script>
 <script>
 (function(){
 "use strict";
-const W=window.ComicWorkbench,H=window.ComicHash,Q=window.ComicBalloonQA,$=id=>document.getElementById(id);
-let doc=null,panelId="",image=null,annotations=[],current=0,lastReport=null;
+const W=window.ComicWorkbench,H=window.ComicHash,Q=window.ComicBalloonQA,O=window.ComicNativeOcr,$=id=>document.getElementById(id);
+let doc=null,panelId="",image=null,annotations=[],current=0,lastReport=null,ocrToken=0;
 const canvas=$("imgCanvas"),ctx=canvas.getContext("2d");
 function status(id,msg,kind){
  const elem=$(id);elem.textContent=msg;elem.className=id==="imageState"?"small":"notice"+(kind?" "+kind:"");
 }
 function clearResult(){lastReport=null;$("report").disabled=true;status("result","入力が変更されました。再検査してください。");$("issues").replaceChildren()}
+function resetOcr(){
+ ocrToken++;
+ $("ocrCandidates").replaceChildren();
+ const cap=O.availability(window);
+ $("ocrTry").disabled=!cap.available||!image;
+ $("ocrStatus").textContent=cap.available?
+   (image?"OCRを利用できます。ボタンを押すまで処理しません。":"画像を選ぶと利用できます。"):cap.reason;
+}
+$("ocrTry").onclick=async()=>{
+ if(!image)return;
+ const token=++ocrToken,bitmap=image.bitmap;
+ $("ocrTry").disabled=true;$("ocrStatus").textContent="OCR候補を検出しています。";
+ try{
+   const result=await O.recognize(bitmap,window);
+   if(token!==ocrToken||!image||bitmap!==image.bitmap)return;
+   const area=$("ocrCandidates");area.replaceChildren();
+   $("ocrStatus").textContent=result.note;
+   if(result.status!=="CANDIDATES")return;
+   const candidates=result.detections.filter(x=>x.recognized);
+   $("ocrStatus").textContent="試験的なOCR候補 "+candidates.length+"件。必ず画像と照合してください。";
+   for(const cand of candidates){
+     const block=document.createElement("div");block.className="annotation";
+     const p=document.createElement("p");p.textContent="OCR候補："+cand.text;block.append(p);
+     const select=document.createElement("select");
+     for(let n=0;n<annotations.length;n++){
+       const opt=document.createElement("option");opt.value=String(n);
+       opt.textContent=(n+1)+"番の吹き出し";select.append(opt);
+     }
+     block.append(select);
+     const btn=document.createElement("button");btn.type="button";
+     btn.textContent="選択した転記欄へ候補をコピー";
+     btn.onclick=()=>{
+       const n=Number(select.value);
+       if(!annotations[n]||!window.confirm("画像と照合してください。OCR候補を"+(n+1)+"番に転記しますか？"))return;
+       annotations[n].observedText=cand.text;
+       annotations[n].humanChecked=false;
+       clearResult();renderAnnotations();
+       $("ocrStatus").textContent="候補を転記しました。目視確認チェックは未完了です。";
+     };
+     block.append(btn);area.append(block);
+   }
+ }catch(e){
+   if(token===ocrToken)$("ocrStatus").textContent="OCR実行失敗："+e.message+"。手動転記してください。";
+ }finally{
+   if(token===ocrToken)$("ocrTry").disabled=!O.availability(window).available||!image;
+ }
+};
 function getPanel(){return doc?.pages.flatMap(pg=>pg.panels).find(p=>p.id===panelId)}
 function draw(){
  canvas.style.width=(100*Number($("zoom").value||1))+"%";
@@ -97,7 +150,7 @@ function setImage(bitmap,sha256,bytes,name){
  if(image?.bitmap&&image.bitmap!==bitmap&&image.bitmap.close)image.bitmap.close();
  image={bitmap,sha256,bytes,name,width:bitmap.width,height:bitmap.height};
  canvas.width=bitmap.width;canvas.height=bitmap.height;
- annotations=Q.newAnnotations(doc,panelId);current=0;clearResult();renderAnnotations();draw();
+ annotations=Q.newAnnotations(doc,panelId);current=0;clearResult();resetOcr();renderAnnotations();draw();
  status("imageState","読み込み済み："+name+"／"+bitmap.width+"×"+bitmap.height+"／SHA-256 "+sha256.slice(0,16)+"…");
 }
 async function readImage(file){
@@ -124,7 +177,7 @@ function takeDoc(next){
  valid.forEach(p=>{const opt=document.createElement("option");opt.value=p.id;opt.textContent=p.id+"（"+p.lines.length+"件）";sel.append(opt)});
  sel.disabled=false;panelId=sel.value;
  annotations=Q.newAnnotations(doc,panelId);current=0;image?.bitmap?.close?.();image=null;
- canvas.width=900;canvas.height=540;$("imageFile").value="";clearResult();updateSource();renderAnnotations();draw();
+ canvas.width=900;canvas.height=540;$("imageFile").value="";clearResult();resetOcr();updateSource();renderAnnotations();draw();
  status("imageState","このコマの画像を選んでください。別のコマの画像・注釈は引き継ぎません。");
 }
 function renderAnnotations(){
@@ -178,7 +231,7 @@ $("panel").addEventListener("change",()=>{
  if(!doc)return;panelId=$("panel").value;
  annotations=Q.newAnnotations(doc,panelId);current=0;
  image?.bitmap?.close?.();image=null;$("imageFile").value="";canvas.width=900;canvas.height=540;
- clearResult();updateSource();renderAnnotations();draw();
+ clearResult();resetOcr();updateSource();renderAnnotations();draw();
  status("imageState","コマを切り替えました。対応する画像を選び直してください。");
 });
 $("docFile").addEventListener("change",async e=>{
@@ -252,6 +305,6 @@ $("demo").onclick=async()=>{
   status("sourceState","練習用の非Canon原稿2行を読み込みました。画像の右→左の順に①②をタップし、見える文字と話者を入力してください。");
  }catch(err){status("sourceState","デモの生成に失敗しました："+err.message,"error")}
 };
-draw();
+draw();resetOcr();
 })();
 </script></body></html>
