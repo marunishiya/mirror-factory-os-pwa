@@ -92,7 +92,7 @@ pre{white-space:pre-wrap;word-break:break-word;padding:12px;background:#101929;b
 <section>
 <h2>3. 画素差分検査</h2>
 <p class="muted small">各画素のRGBA最大差が24を超える場合を「変化あり」と判定。修正範囲外の変化画素率が0.5%を超えるとFAILです。領域全体が60%以上の場合も受付不可。画像圧縮や色補正によってFAILになることがあります。</p>
-<div class="row"><button class="primary" id="compare" type="button">修正前後を比較する</button><button id="compose" type="button">指定範囲だけ合成してPNG保存</button><button id="reset" type="button">画像と結果を消去する</button></div>
+<div class="row"><button id="sample" type="button">練習用画像で試す</button><button class="primary" id="compare" type="button">修正前後を比較する</button><button id="compose" type="button">指定範囲だけ合成してPNG保存</button><button id="reset" type="button">画像と結果を消去する</button></div>
 <p id="composeStatus" class="small muted">範囲内だけを候補画像で差し替え、範囲外は元の画素を保持します。合成画像は保存操作をした時だけ端末にダウンロードされます。</p>
 <div class="pic"><h3>合成結果（変更範囲以外は元画像）</h3><canvas id="mergedCanvas" width="480" height="280" aria-label="範囲指定合成画像"></canvas></div>
 <div id="result" class="notice" role="status" aria-live="polite">2画像を指定し、修正可能領域を指で選択してください。</div>
@@ -308,6 +308,36 @@ function compare(){
   comparison.verdict==="FAIL"?"fail":comparison.verdict==="PASS"?"pass":"warn");
  report=createReport();$("details").textContent=JSON.stringify(report,null,2);
 }
+$("sample").onclick=async()=>{
+ try{
+  if((slots.master||slots.before||slots.after)&&!confirm("現在の画像を破棄して、架空のデモ画像に置き換えますか？"))return;
+  const make=async changed=>{
+   const can=document.createElement("canvas");can.width=480;can.height=320;
+   const x=can.getContext("2d");
+   x.fillStyle="#fbf0d9";x.fillRect(0,0,480,320);
+   x.fillStyle="#6c8c70";x.fillRect(0,230,480,90);
+   x.fillStyle="#3d5774";x.fillRect(60,35,180,190);
+   x.fillStyle="#d9bc8a";x.beginPath();x.arc(150,111,42,0,Math.PI*2);x.fill();
+   x.fillStyle="#242936";x.fillRect(80,160,145,8);
+   x.fillStyle="#2c3c50";x.fillRect(245,70,165,155);
+   x.fillStyle="#f8efd9";x.fillRect(258,80,135,125);
+   if(changed){x.fillStyle="#bd454a";x.fillRect(290,115,65,60)}
+   const blob=await new Promise((resolve,reject)=>can.toBlob(b=>b?resolve(b):
+     reject(Error("デモ画像の生成に失敗しました")),"image/png"));
+   return new File([blob],changed?"demo-after.png":"demo-before.png",{type:"image/png"});
+  };
+  const original=await make(false),candidate=await make(true);
+  await loadInto("before",original);
+  await loadInto("after",candidate);
+  $("authorityId").value="demo-panel";
+  $("authorityLabel").value="架空のデモ";
+  $("panelId").value="DEMO_PANEL";
+  $("authorityConfirm").checked=false;
+  roi={x:0.58,y:0.32,width:0.19,height:0.27};
+  resetResult();redraw();setStatus();
+  message("架空の練習画像を生成しました。「比較する」→「指定範囲だけ合成してPNG保存」をお試しください。正式作品ではありません。","pass");
+ }catch(e){message("デモ生成失敗: "+e.message,"fail")}
+};
 $("compare").onclick=()=>{try{compare()}catch(e){comparison=null;report=null;drawEmpty("diffCanvas","検査できません");message("検査できません: "+e.message,"fail")}};
 $("compose").onclick=async()=>{
  try{
