@@ -15,4 +15,4 @@ jobs:
       - name: Checkout pull request
         uses: actions/checkout@v4
       - name: Node unit tests (no API credentials, no deployment)
-        run: node --test labs/comic-workbench/engine.test.cjs
+        run: node --test labs/comic-workbench/engine.test.cjs labs/comic-workbench/image-qa.test.cjs
