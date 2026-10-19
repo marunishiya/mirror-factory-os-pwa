@@ -25,15 +25,17 @@ function inlined(name){
  fs.writeFileSync(path.join(out,name),ret,"utf8");
  return ret;
 }
-const index=inlined("index.html"),image=inlined("image-lab.html");
+const index=inlined("index.html"),image=inlined("image-lab.html"),balloon=inlined("balloon-lab.html");
 if(!index.includes("ComicWorkbench")||!image.includes("ComicImageQA")||
- !image.includes("ComicAuthority")||!image.includes("ComicHash"))throw Error("Missing bundled API");
+ !image.includes("ComicAuthority")||!image.includes("ComicHash")||
+ !balloon.includes("ComicBalloonQA"))throw Error("Missing bundled API");
 const guide=[
-"Comic Workbench OFFLINE v0.8",
+"Comic Workbench OFFLINE v0.9",
 "",
-"スマホ用：index.html または image-lab.html をChrome等で開いてください。",
+"スマホ用：index.html、image-lab.html、balloon-lab.htmlの3つのHTMLをChrome等で開いてください。",
+"吹き出しQA：原稿JSON→コマ画像→吹き出しをタップ→話者・文字を目視で入力→注釈の照合→JSON保存。",
 "手順：画像ラボ →「練習用画像で試す」→「修正前後を比較する」→「指定範囲だけ合成してPNG保存」。",
-"ZIPの中にある2つのHTMLは同じフォルダに置いてください（画面間リンク用）。",
+"ZIPの中にある3つのHTMLは同じフォルダに置いてください（画面間リンク用）。",
 "端末がHTMLファイルをブラウザで開けない場合は、PCのChrome/Edgeで開けます。",
 "作品の画像は端末内のメモリで処理。自動ネット送信・ログイン・APIキー・課金はありません。",
 "画像自体は保存されません。必要な合成PNG／台帳JSON／レポートJSONを各ボタンから保存してください。",
@@ -42,4 +44,4 @@ const guide=[
 ].join("\n");
 fs.writeFileSync(path.join(out,"使い方.txt"),guide+"\n","utf8");
 console.log(JSON.stringify({output:out,files:fs.readdirSync(out),scripts:[...included],bytes:{
- index:Buffer.byteLength(index),image:Buffer.byteLength(image)}}));
+ index:Buffer.byteLength(index),image:Buffer.byteLength(image),balloon:Buffer.byteLength(balloon)}}));
