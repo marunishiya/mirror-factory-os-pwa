@@ -319,3 +319,16 @@ AIによる描画、異なるポーズの顔一致判定、ユーザー承認の
 - Tesseract.js（Apache-2.0）：https://github.com/naptha/tesseract.js
 
 販売前の検証に**OCR認識器の日本語文字正解率、誤検出率、縦書き・小さい吹き出しでの実測**を追加する。現行のCLI/Node単体テストはTextDetectorを模擬したもので、実機OCR性能の証明にはならない。
+
+
+### v0.10 現実ブラウザでの試験結果
+
+CIの`161件`はJavaScript単体テスト（TextDetectorは模擬実装）。加えてChromiumを390px幅で起動し、GitHub Actionsの配布HTMLを直接読み込ませる操作検証を行った。
+
+1. **標準TextDetectorなし**：OCRボタン無効化、未対応の理由を表示。手動転記は引き続き利用可能。
+2. **模擬TextDetectorあり**：非Canon画像2件分の文字候補を表示、本人が候補を選択し転記欄へコピー、目視チェックは未完了に戻り、実画像・原稿の変更なし。
+3. JavaScriptエラー0、HTML自身による外部ネットワークリクエスト0。
+
+**注意**：模擬TextDetectorは実際の画像から文字を読み取るモデルではないので、OCRの精度・所要時間・RAM・日本語縦書き性能は一切測定していない。実Android端末でも未検証。
+
+今後の正解ラベルを固定した**人物同一性・OCR盲検評価**は `IDENTITY_BENCHMARK.md`に記載したが、正式MASTERや評価用の顔画像をGitHubへ投入したわけではない。
