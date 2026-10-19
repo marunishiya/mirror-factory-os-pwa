@@ -29,7 +29,7 @@ const index=inlined("index.html"),image=inlined("image-lab.html");
 if(!index.includes("ComicWorkbench")||!image.includes("ComicImageQA")||
  !image.includes("ComicAuthority")||!image.includes("ComicHash"))throw Error("Missing bundled API");
 const guide=[
-"Comic Workbench OFFLINE v0.5",
+"Comic Workbench OFFLINE v0.6",
 "",
 "スマホ用：index.html または image-lab.html をChrome等で開いてください。",
 "手順：画像ラボ →「練習用画像で試す」→「修正前後を比較する」→「指定範囲だけ合成してPNG保存」。",
