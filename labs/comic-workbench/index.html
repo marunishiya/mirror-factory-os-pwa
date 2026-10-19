@@ -108,10 +108,11 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
 <footer>検証用の独立画面。正式Canonは必ず別途参照・承認してください。</footer>
 <script src="./engine.js"></script>
 <script src="./factory-bridge.js"></script>
+<script src="./dialogue-codec.js"></script>
 <script>
 (function(){
 "use strict";
-const W=window.ComicWorkbench,B=window.ComicFactoryBridge;
+const W=window.ComicWorkbench,B=window.ComicFactoryBridge,C=window.ComicDialogueCodec;
 const $=id=>document.getElementById(id);
 let doc=W.demo("mirror"), selected="P01", dirty=false, promptText="",factorySource=null;
 const CHECK_LABELS={
@@ -172,7 +173,7 @@ function render(){
  addValue(grid,"requiredCast","必要な人物ID",p.requiredCast.join(", "));
  addValue(grid,"phase","物語段階 setup / investigation / reveal",p.phase);
  addValue(grid,"assetRef","完成画像の参照先（パスや管理ID）",p.assetRef,"画像の実体はアップロードされません。文字列だけ保存されます。");
- formField(holder,"lines","セリフ（1行：話者ID | 相手ID | セリフ）",p.lines.map(l=>l.speaker+" | "+l.target+" | "+l.text).join("\n"),true,
+ formField(holder,"lines","セリフ（1行：話者ID | 相手ID | セリフ）",C.format(p.lines),true,
     "例: guest | staff | 責任者を呼んでください。 無言コマは空欄。");
  const tags=el("div");tags.className="grid2";holder.append(tags);
  [["requiredProps","必須小道具"],["visibleProps","確認できる小道具"],
@@ -221,7 +222,7 @@ function save(){
  const patch={
    scene:value("scene"),phase:value("phase").trim(),cast:unique(strList(value("cast"))),
    requiredCast:unique(strList(value("requiredCast"))),
-   lines:splitLines(value("lines"),"dialogue"),
+   lines:C.retainOrParse(value("lines"),active().lines),
    assetRef:value("assetRef").trim(),requiredProps:unique(strList(value("requiredProps"))),
    visibleProps:unique(strList(value("visibleProps"))),requiredClues:unique(strList(value("requiredClues"))),
    visibleClues:unique(strList(value("visibleClues"))),hiddenClues:unique(strList(value("hiddenClues"))),
