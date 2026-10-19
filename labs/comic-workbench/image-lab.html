@@ -218,6 +218,7 @@ async function loadInto(slot,file){
  // Import is transactional: keep the old file if the new one is invalid.
  const next=await readFile(file);
  revoke(slot);slots[slot]=next;
+ if(slot==="master")$("authorityConfirm").checked=false;
  if(slot==="before")roi=null;
  resetResult();redraw();setStatus();
  $("details").textContent="SHA-256を計算しました。比較前の画像は端末内のメモリだけに保持されています。";
@@ -392,7 +393,9 @@ $("reset").onclick=()=>{
   if(comparison){report=null;$("details").textContent="目視確認の記録が変更されました。JSONを保存すると最新の結果を含めます。"}
  });
 });
-["project","panelId"].forEach(id=>$(id).addEventListener("change",()=>{resetResult();refreshAuthorityStatus()}));
+["project","panelId"].forEach(id=>$(id).addEventListener("change",()=>{
+ $("authorityConfirm").checked=false;resetResult();refreshAuthorityStatus();
+}));
 ["authorityId","authorityKind"].forEach(id=>$(id).addEventListener("change",()=>{
  resetResult();refreshAuthorityStatus();
 }));
