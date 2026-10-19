@@ -109,6 +109,18 @@
   data.ocrPerformed=false;
   data.visualImageVerified=false;
   data.canonApproved=false;
+  if(value.ocrAssistance){
+    const e=value.ocrAssistance;
+    if(!["local-desktop-ocr","native-browser-experimental"].includes(e.source)||
+       typeof e.engine!=="string"||e.engine.length>80||
+       e.humanReviewRequired!==true||e.modelCertified!==false||
+       e.imageSha256!==data.image?.sha256)
+       err("OCR補助履歴が画像と一致しないか不正です");
+    data.ocrAssistance={
+      source:e.source,engine:e.engine,imageSha256:e.imageSha256,
+      humanReviewRequired:true,modelCertified:false
+    };
+  } else delete data.ocrAssistance;
   delete data.imageBytes;
   delete data.imageData;
   delete data.dataUrl;
