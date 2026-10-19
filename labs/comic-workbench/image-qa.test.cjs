@@ -127,3 +127,35 @@ test("画像比較機能は外部APIへ送信しないローカル実装",()=>{
   assert(!/\bXMLHttpRequest\b/.test(src));
   assert(!/\bWebSocket\b/.test(src));
 });
+
+
+test("ROI合成は指定領域内だけ候補画像をコピーする",()=>{
+ const [before,after]=unchanged();
+ pixel(after,10,4,4,[200,30,25,255]);
+ pixel(after,10,0,0,[250,250,250,255]);
+ const original=before.slice(),candidate=after.slice();
+ const out=I.composeRegion(before,after,10,10,region);
+ assert.deepEqual([...out.slice((4*10+4)*4,(4*10+5)*4)],[200,30,25,255]);
+ assert.deepEqual([...out.slice(0,4)],[15,20,25,255]);
+ assert.deepEqual(before,original,"元画像を改変しない");
+ assert.deepEqual(after,candidate,"候補画像を改変しない");
+});
+test("ROI合成した画像は領域外のRGBAバイトが完全に一致",()=>{
+ const a=buffer(100,100,(x,y)=>[x%256,y%256,(x+y)%256,255]);
+ const b=buffer(100,100,()=>[255,80,50,128]);
+ const r={x:.2,y:.2,width:.4,height:.4};
+ const out=I.composeRegion(a,b,100,100,r);
+ const result=I.compare(a,out,100,100,r,{channelTolerance:0});
+ assert.equal(result.outside.changed,0);
+ assert.equal(result.verdict,"PASS");
+ assert(result.inside.changed>0);
+});
+test("合成領域が不正なら生成を拒否",()=>{
+ const [a,b]=unchanged();
+ assert.throws(()=>I.composeRegion(a,b,10,10,{x:0,y:0,width:1,height:1}),/大きすぎ/);
+ assert.throws(()=>I.composeRegion(a,b,10,10,{x:-1,y:0,width:.2,height:.2}),/0～1/);
+});
+test("画像サイズが一致しなければ合成しない",()=>{
+ const [a,b]=unchanged();
+ assert.throws(()=>I.composeRegion(a,b.slice(0,20),10,10,region),/サイズ/);
+});
