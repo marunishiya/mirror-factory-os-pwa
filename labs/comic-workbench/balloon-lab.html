@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><title>吹き出し画像QA｜Comic Workbench</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#0b1220;color:#f3f7ff}
+*{box-sizing:border-box}body{margin:0}a{color:#90c8ff}
+header{background:#18243b;border-bottom:1px solid #3d526b;padding:16px}
+main{max-width:1000px;margin:auto;padding:14px;display:grid;gap:14px}
+section{background:#19253b;border:1px solid #405573;border-radius:14px;padding:16px}
+h1{font-size:1.32rem;margin:6px 0}h2{font-size:1.08rem;margin:4px 0 12px}
+p{line-height:1.65;margin:8px 0}.small{font-size:.89rem;color:#b4c4da}
+.row{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:9px 0}
+button,select,input,textarea{font:inherit}
+button,select{min-height:46px;padding:10px 12px;border:1px solid #788cac;border-radius:9px;background:#2b3d56;color:white}
+button:disabled{opacity:.5}button.primary{background:#2265a7;border-color:#78b9ff}
+input[type=file]{width:100%;max-width:400px}textarea{width:100%;min-height:70px;padding:10px;border-radius:8px;color:white;background:#0c1728;border:1px solid #647992;line-height:1.5}
+label{display:block;margin:9px 0 5px}select{max-width:100%}
+input[type=checkbox]{width:22px;height:22px;accent-color:#7bc7ff}
+.notice{border-left:4px solid #7baee4;background:#26364f;padding:10px 12px;border-radius:7px;white-space:pre-wrap}
+.error{border-left-color:#ff899b;color:#ffd2dc}.success{border-left-color:#7ce5b4;color:#cbffde}
+#canvasWrap{position:relative;max-width:900px;margin:auto}
+#imgCanvas{display:block;width:100%;height:auto;max-height:74vh;object-fit:contain;touch-action:manipulation;border:2px solid #6b8eaf;background:#111d2b;border-radius:10px}
+#annotationList{display:grid;gap:10px}
+.annotation{padding:13px;border-radius:11px;border:1px solid #526681;background:#22324b}
+.annotation.current{outline:3px solid #85c6f7}
+.annotation .line{font-weight:700}
+fieldset{margin:12px 0;border:1px solid #506583;border-radius:9px}
+legend{font-weight:700}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+code{overflow-wrap:anywhere}button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #a4ddff}
+@media(max-width:600px){main{padding:10px}section{padding:14px}.two{grid-template-columns:1fr}button,select{min-height:49px}h1{font-size:1.2rem}}
+</style></head>
+<body>
+<header><div class="small">COMIC WORKBENCH / VISUAL QA / OFFLINE v0.9</div>
+<h1>吹き出し画像QA</h1><p class="small">画像を見て、吹き出しの場所・話者・文字を照合する独立した検査画面</p>
+<div class="row"><a href="./index.html">← 漫画編集へ</a><a href="./image-lab.html">画像の局所修正へ</a></div></header>
+<main>
+<section><h2>① 原稿データを準備</h2>
+<p class="small">まず漫画ワークベンチの「JSON保存」で原稿を保存し、ここで選択します。ブラウザの自動共有や正式Canon変更はしません。</p>
+<div class="row"><button id="demo" type="button">練習用サンプルを作る（非Canon）</button></div>
+<label>原稿JSON（最大2MB）<input id="docFile" type="file" accept=".json,application/json"></label>
+<label>検査するコマ<select id="panel" disabled><option>未選択</option></select></label>
+<p id="sourceState" class="notice" role="status">原稿未読み込みです。</p>
+</section>
+<section><h2>② 対象のコマ画像を選ぶ</h2>
+<label>PNG / JPEG / WebP（10MB・400万画素まで）<input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<p id="imageState" class="small">画像は端末内でのみ読み込み、外部へ送信しません。</p>
+<div id="canvasWrap"><canvas id="imgCanvas" width="900" height="540" aria-label="コマ画像。吹き出しの中心をタップして位置を登録"></canvas></div>
+<p class="small">下で「何番の吹き出しを登録するか」を選んでから、上の画像にある吹き出しの中心をタップしてください。タップ位置は番号付きで表示されます。</p>
+</section>
+<section><h2>③ 目で確認して入力</h2>
+<p class="small">右から左／上から下に読む場合など、実画像の位置を見て確認してください。話者欄と転記欄は自動入力しません。</p>
+<div id="annotationList"><p class="small">原稿を選ぶと、セリフ別の確認欄を表示します。</p></div>
+</section>
+<section><h2>④ 照合とレポート</h2>
+<div class="row"><button class="primary" type="button" id="check">人が記録した注釈を照合する</button>
+<button type="button" id="report" disabled>検査レポートJSON保存</button>
+<button type="button" id="resetAnnotations">注釈だけ消去</button></div>
+<p id="result" class="notice" role="status">まだ検査していません。</p>
+<div id="issues"></div>
+<p class="small"><strong>重要：</strong>これは人が入力した吹き出し情報と確定原稿の一致検査です。OCRやAIの顔検査、吹き出しの自動認識は未実装です。「注釈の内容が一致」しても実画像を機械が検証したことにはならず、正式Canonの承認や販売用の最終PASSにはしません。</p>
+</section>
+</main>
+<script src="./engine.js"></script><script src="./sha256.js"></script><script src="./balloon-qa.js"></script>
+<script>
+(function(){
+"use strict";
+const W=window.ComicWorkbench,H=window.ComicHash,Q=window.ComicBalloonQA,$=id=>document.getElementById(id);
+let doc=null,panelId="",image=null,annotations=[],current=0,lastReport=null;
+const canvas=$("imgCanvas"),ctx=canvas.getContext("2d");
+function status(id,msg,kind){
+ const elem=$(id);elem.textContent=msg;elem.className=id==="imageState"?"small":"notice"+(kind?" "+kind:"");
+}
+function clearResult(){lastReport=null;$("report").disabled=true;status("result","入力が変更されました。再検査してください。");$("issues").replaceChildren()}
+function getPanel(){return doc?.pages.flatMap(pg=>pg.panels).find(p=>p.id===panelId)}
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle="#17283f";ctx.fillRect(0,0,canvas.width,canvas.height);
+ if(image){
+  ctx.drawImage(image.bitmap,0,0,canvas.width,canvas.height);
+  annotations.forEach((a,i)=>{
+   if(a.x===null)return;
+   const x=a.x*canvas.width,y=a.y*canvas.height;
+   ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);
+   ctx.fillStyle=i===current?"#fce48a":"#57ccfc";ctx.fill();
+   ctx.lineWidth=3;ctx.strokeStyle="#122333";ctx.stroke();
+   ctx.fillStyle="#0c1826";ctx.font="bold 21px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";
+   ctx.fillText(String(i+1),x,y);
+  });
+ }else{
+  ctx.fillStyle="#b6c5db";ctx.textAlign="center";ctx.font="18px system-ui";
+  ctx.fillText("画像を選ぶか、練習用サンプルを作成",450,270);
+ }
+}
+function setImage(bitmap,sha256,bytes,name){
+ if(image?.bitmap&&image.bitmap!==bitmap&&image.bitmap.close)image.bitmap.close();
+ image={bitmap,sha256,bytes,name,width:bitmap.width,height:bitmap.height};
+ canvas.width=bitmap.width;canvas.height=bitmap.height;
+ annotations=Q.newAnnotations(doc,panelId);current=0;clearResult();renderAnnotations();draw();
+ status("imageState","読み込み済み："+name+"／"+bitmap.width+"×"+bitmap.height+"／SHA-256 "+sha256.slice(0,16)+"…");
+}
+async function readImage(file){
+ if(!doc||!panelId)throw Error("原稿とコマを先に選んでください");
+ if(!file||file.size<8||file.size>10*1024*1024||
+   !["image/png","image/jpeg","image/webp"].includes(file.type))throw Error("対応画像・10MB以内のファイルを選んでください");
+ const data=await file.arrayBuffer();
+ const bmp=await createImageBitmap(file);
+ if(bmp.width*bmp.height>4000000||bmp.width<1||bmp.height<1){bmp.close?.();throw Error("画像は400万画素以内にしてください")}
+ setImage(bmp,await H.sha256(data),file.size,file.name);
+}
+function updateSource(){
+ const s=W.sourceReport(doc,panelId);
+ const p=getPanel();
+ const message=(s.status==="MATCH"?"FACTORY原稿とSOURCE LOCKが一致。":"FACTORY原稿のSOURCE LOCK: "+s.status+"。")+
+   " 対象："+p.id+"／"+p.lines.length+"セリフ。"+(s.mismatches?.join("／")||"");
+ status("sourceState",message,s.status==="DIVERGED"||s.status==="SOURCE_UNVERIFIED"?"error":"");
+}
+function takeDoc(next){
+ W.assertDocument(next);
+ const valid=next.pages.flatMap(pg=>pg.panels).filter(p=>p.lines.length>0);
+ if(!valid.length)throw Error("発言のあるコマがありません");
+ doc=next;const sel=$("panel");sel.replaceChildren();
+ valid.forEach(p=>{const opt=document.createElement("option");opt.value=p.id;opt.textContent=p.id+"（"+p.lines.length+"件）";sel.append(opt)});
+ sel.disabled=false;panelId=sel.value;
+ annotations=Q.newAnnotations(doc,panelId);current=0;image?.bitmap?.close?.();image=null;
+ canvas.width=900;canvas.height=540;clearResult();updateSource();renderAnnotations();draw();
+ status("imageState","このコマの画像を選んでください。別のコマの画像・注釈は引き継ぎません。");
+}
+function renderAnnotations(){
+ const p=getPanel(),holder=$("annotationList");holder.replaceChildren();
+ if(!p){const t=document.createElement("p");t.textContent="原稿が未登録です。";holder.append(t);return}
+ const names=new Map(doc.canon.characters.map(c=>[c.id,c.name]));
+ p.lines.forEach((line,i)=>{
+  const a=annotations[i],el=document.createElement("div");el.className="annotation"+(i===current?" current":"");
+  const h=document.createElement("div");h.className="line";
+  h.textContent=(i+1)+"番：確定原稿「"+line.text+"」／"+(names.get(line.speaker)||line.speaker);
+  el.append(h);
+  const choose=document.createElement("button");choose.type="button";
+  choose.textContent=i===current?"選択中：画像をタップ":"この吹き出しの位置を指定";
+  choose.onclick=()=>{current=i;renderAnnotations();draw()};
+  el.append(choose);
+  const spot=document.createElement("span");spot.className="small";
+  spot.textContent=a.x===null?"　位置：未指定":"　位置："+Math.round(a.x*100)+"%／"+Math.round(a.y*100)+"%";
+  el.append(spot);
+  const lineLabel=document.createElement("label");lineLabel.textContent="画像内で発話している人物（実物を見て選択）";
+  const select=document.createElement("select");
+  const empty=document.createElement("option");empty.value="";empty.textContent="未判定";select.append(empty);
+  const all=new Map(doc.canon.characters.map(c=>[c.id,c.name]));all.set(line.speaker,all.get(line.speaker)||line.speaker);
+  for(const [id,name] of all){const option=document.createElement("option");option.value=id;option.textContent=name+" ("+id+")";select.append(option)}
+  select.value=a.observedSpeaker;
+  select.onchange=()=>{a.observedSpeaker=select.value;clearResult()};
+  lineLabel.append(select);el.append(lineLabel);
+  const textLabel=document.createElement("label");textLabel.textContent="実画像から読んで転記（1文字まで厳密比較）";
+  const textarea=document.createElement("textarea");textarea.value=a.observedText;textarea.placeholder="実際の画像に見えるセリフを転記";
+  textarea.oninput=()=>{a.observedText=textarea.value;clearResult()};
+  textLabel.append(textarea);el.append(textLabel);
+  const check=document.createElement("label");check.className="row";
+  const box=document.createElement("input");box.type="checkbox";box.checked=a.humanChecked;
+  box.onchange=()=>{a.humanChecked=box.checked;clearResult()};
+  const text=document.createElement("span");text.textContent="この吹き出しを画像上で目視確認した";
+  check.append(box,text);el.append(check);holder.append(el);
+ });
+}
+canvas.addEventListener("click",e=>{
+ if(!image||!annotations.length)return;
+ const r=canvas.getBoundingClientRect();
+ if(!r.width||!r.height)return;
+ const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+ if(x<0||x>1||y<0||y>1)return;
+ annotations[current].x=Number(x.toFixed(5));
+ annotations[current].y=Number(y.toFixed(5));
+ if(current<annotations.length-1)current++;
+ clearResult();renderAnnotations();draw();
+});
+$("panel").addEventListener("change",()=>{
+ if(!doc)return;panelId=$("panel").value;
+ annotations=Q.newAnnotations(doc,panelId);current=0;
+ image?.bitmap?.close?.();image=null;canvas.width=900;canvas.height=540;
+ clearResult();updateSource();renderAnnotations();draw();
+ status("imageState","コマを切り替えました。対応する画像を選び直してください。");
+});
+$("docFile").addEventListener("change",async e=>{
+ const f=e.target.files?.[0];e.target.value="";if(!f)return;
+ try{
+  if(f.size<1||f.size>2*1024*1024)throw Error("原稿JSONは2MB以内にしてください");
+  takeDoc(JSON.parse(await f.text()));
+ }catch(err){status("sourceState","原稿の読込失敗："+err.message,"error")}
+});
+$("imageFile").addEventListener("change",async e=>{
+ const f=e.target.files?.[0];e.target.value="";if(!f)return;
+ try{await readImage(f)}catch(err){status("imageState","画像の読込失敗："+err.message)}
+});
+$("check").onclick=()=>{
+ try{
+  if(!doc||!panelId||!image)throw Error("原稿と対応する画像が必要です");
+  const source=W.sourceReport(doc,panelId).status;
+  lastReport=Q.evaluate(doc,panelId,annotations,
+    {sha256:image.sha256,width:image.width,height:image.height,bytes:image.bytes},source);
+  $("report").disabled=false;
+  const verdict=lastReport.status;
+  status("result","照合結果："+verdict+" ／ 不一致 "+lastReport.errors+
+    "件・未確認 "+lastReport.pending+"件・位置に関する注意 "+lastReport.warnings+
+    "件。\n※画像自体のOCR／AI認識によるPASSではありません。",
+    verdict==="MISMATCH"||verdict==="BLOCKED"?"error":verdict==="ANNOTATIONS_CONSISTENT"?"success":"");
+  const target=$("issues");target.replaceChildren();
+  for(const issue of lastReport.issues){
+   const x=document.createElement("p");x.className="notice"+(issue.type==="ERROR"?" error":"");
+   x.textContent=(issue.index===null?"全体":String(issue.index+1)+"番")+" / "+issue.code+" / "+issue.message;
+   target.append(x);
+  }
+ }catch(err){lastReport=null;$("report").disabled=true;status("result","照合失敗："+err.message,"error")}
+};
+$("report").onclick=()=>{
+ if(!lastReport)return;
+ const blob=new Blob([Q.safeReport(lastReport)],{type:"application/json"});
+ const url=URL.createObjectURL(blob),link=document.createElement("a");
+ link.href=url;link.download="balloon-qa-"+doc.project+"-"+panelId.replace(/[^a-z0-9_-]/gi,"_")+".json";
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ status("result","検査レポートJSONを保存しました。端末のダウンロード先を確認してください。\nこれは正式Canon承認・画像AI検証の証明ではありません。");
+};
+$("resetAnnotations").onclick=()=>{
+ if(!doc)return;
+ if(!confirm("注釈を全件消去しますか？ 原稿や元の画像ファイルは変更しません。"))return;
+ annotations=Q.newAnnotations(doc,panelId);current=0;
+ clearResult();renderAnnotations();draw();
+};
+$("demo").onclick=async()=>{
+ if(doc&&!confirm("現在の検査用データを練習用サンプルへ置き換えますか？"))return;
+ try{
+  const d=W.demo("mirror"),p=d.pages[0].panels[0];
+  p.lines.push({speaker:"staff",target:"guest",text:"お待ちください。"});
+  takeDoc(d);
+  const c=document.createElement("canvas");c.width=720;c.height=470;
+  const x=c.getContext("2d");
+  x.fillStyle="#d4d7dd";x.fillRect(0,0,720,470);
+  x.fillStyle="#597086";x.fillRect(0,270,720,200);
+  x.fillStyle="#323945";x.fillRect(130,160,125,290);x.fillRect(475,160,115,290);
+  function balloon(bx,by,text){
+   x.fillStyle="white";x.beginPath();x.ellipse(bx,by,136,66,0,0,Math.PI*2);x.fill();
+   x.strokeStyle="#1c2833";x.lineWidth=3;x.stroke();x.fillStyle="#222";
+   x.font="18px sans-serif";x.textAlign="center";x.fillText(text,bx,by+5);
+  }
+  balloon(545,110,"責任者を呼んでください。");
+  balloon(165,110,"お待ちください。");
+  const blob=await new Promise(resolve=>c.toBlob(resolve,"image/png"));
+  if(!blob)throw Error("サンプル画像の生成に失敗しました");
+  const bmp=await createImageBitmap(blob);
+  setImage(bmp,await H.sha256(await blob.arrayBuffer()),blob.size,"demo-not-canon.png");
+  status("sourceState","練習用の非Canon原稿2行を読み込みました。画像の右→左の順に①②をタップし、見える文字と話者を入力してください。");
+ }catch(err){status("sourceState","デモの生成に失敗しました："+err.message,"error")}
+};
+draw();
+})();
+</script></body></html>
