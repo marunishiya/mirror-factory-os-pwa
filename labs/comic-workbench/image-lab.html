@@ -198,15 +198,16 @@ $("beforeCanvas").addEventListener("pointermove",e=>{
 });
 function endDrag(e){
  if(!anchor)return;
- const p=atPosition(e);anchor=null;
- const next={x:Math.min(p.x,roi?.x??p.x),y:Math.min(p.y,roi?.y??p.y),
-   width:roi?.width||0,height:roi?.height||0};
+ const end=atPosition(e), start=anchor;
+ anchor=null;
+ const next={x:Math.min(start.x,end.x),y:Math.min(start.y,end.y),
+   width:Math.abs(start.x-end.x),height:Math.abs(start.y-end.y)};
+ resetResult();
  if(next.width*next.height<0.0001){
-   roi=null;message("小さすぎる範囲は選べません。ドラッグし直してください。","warn");
- } else {
-   try {roi=I.validateRect(next)}catch(err){roi=null;message(err.message,"warn")}
+   roi=null;redraw();message("小さすぎる範囲は選べません。ドラッグし直してください。","warn");return;
  }
- resetResult();redraw();
+ try {roi=I.validateRect(next);redraw()}
+ catch(err){roi=null;redraw();message(err.message,"warn")}
 }
 $("beforeCanvas").addEventListener("pointerup",endDrag);
 $("beforeCanvas").addEventListener("pointercancel",()=>{anchor=null;roi=null;resetResult();redraw()});
