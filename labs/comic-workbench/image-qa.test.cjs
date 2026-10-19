@@ -159,3 +159,22 @@ test("画像サイズが一致しなければ合成しない",()=>{
  const [a,b]=unchanged();
  assert.throws(()=>I.composeRegion(a,b.slice(0,20),10,10,region),/サイズ/);
 });
+
+
+test("広い画像で範囲外1画素だけ変化した候補をPASSにしない",()=>{
+ const a=buffer(100,100),b=a.slice();
+ pixel(b,100,0,0,[250,250,250,255]);
+ const result=I.compare(a,b,100,100,region);
+ assert.equal(result.inside.changed,0);
+ assert(result.outside.fraction<0.005);
+ assert.equal(result.verdict,"FAIL");
+});
+test("範囲内に変更があり範囲外差分が閾値内ならPASS",()=>{
+ const a=buffer(100,100),b=a.slice();
+ pixel(b,100,40,40,[250,10,10,255]);
+ pixel(b,100,0,0,[250,10,10,255]);
+ const result=I.compare(a,b,100,100,region);
+ assert.equal(result.inside.changed,1);
+ assert.equal(result.outside.changed,1);
+ assert.equal(result.verdict,"PASS");
+});
