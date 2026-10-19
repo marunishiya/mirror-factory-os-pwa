@@ -1,4 +1,4 @@
-name: Comic Workbench QA (no deploy)
+name: Comic Workbench QA + Offline Package (no deploy)
 on:
   pull_request:
     paths:
@@ -8,11 +8,20 @@ on:
 permissions:
   contents: read
 jobs:
-  unit-tests:
+  unit-tests-and-package:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Checkout pull request
+      - name: Checkout branch
         uses: actions/checkout@v4
-      - name: Node unit tests (no API credentials, no deployment)
+      - name: Automated unit and portable tests
         run: node --test labs/comic-workbench/*.test.cjs
+      - name: Build offline HTML bundle
+        run: node labs/comic-workbench/build-portable.cjs
+      - name: Publish downloadable test files (not a deployment)
+        uses: actions/upload-artifact@v4
+        with:
+          name: comic-workbench-offline-v0.5
+          path: labs/comic-workbench/portable-dist/
+          if-no-files-found: error
+          retention-days: 14
