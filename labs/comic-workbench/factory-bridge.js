@@ -128,6 +128,11 @@
     sourceInfo:{
       origin:"mirror_factory_os_v09",originalPageId:p.id,
       originalLocked:p.locked===true,sourceLockHash:p.sourceLockHash||null,
+      originalSourceLines:p.lines.map(l=>[l[0],l[1]]),
+      expectedPanels:panels.map((panel,i)=>({
+        id:panel.id,indices:groups[i].indices.slice(),
+        lines:panel.lines.map(l=>({speaker:l.speaker,text:l.text}))
+      })),
       sourceLineCount:p.lines.length,originalPanelCount:groups.length,
       originalSelectedPage:s.selectedPage===p.id,
       importedAs:"unapproved-lab-draft",reversible:false
