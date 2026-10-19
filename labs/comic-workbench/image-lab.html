@@ -58,6 +58,24 @@ pre{white-space:pre-wrap;word-break:break-word;padding:12px;background:#101929;b
 <div id="filesStatus" class="small"></div>
 </section>
 <section>
+<h2>MASTER参照台帳（端末内のみ）</h2>
+<p class="notice">登録は<strong>利用者による原本確認の自己申告</strong>です。正式Canonの承認を自動認定する機能ではありません。</p>
+<div class="row">
+<label>登録する人物ID・背景ID（英数字）<input id="authorityId" type="text" maxlength="64" placeholder="例: sane" autocomplete="off"></label>
+<label>区分 <select id="authorityKind"><option value="character">人物</option><option value="scene">背景・シーン</option></select></label>
+<label>表示名 <input id="authorityLabel" type="text" maxlength="120" placeholder="例: サネ"></label>
+</div>
+<label>確認メモ <input id="authorityNote" type="text" maxlength="500" style="width:min(100%,580px)" placeholder="原本の承認場所・日付などを自分で記録"></label>
+<label><input id="authorityConfirm" type="checkbox"> この画像を正式MASTER原本と照合した（私による確認）</label>
+<div class="row">
+<button id="authorityAdd" type="button">現在のMASTER画像を参照登録</button>
+<button id="authorityExport" type="button">参照台帳JSON保存</button>
+<label>参照台帳JSON読込（最大256KB） <input id="authorityImport" type="file" accept=".json,application/json"></label>
+</div>
+<p class="small muted">画像はJSONに含まれず、ハッシュ・画像寸法・識別名だけが記録されます。再照合時は原本画像の再選択が必要です。</p>
+<p id="authorityStatus" class="notice" role="status" aria-live="polite">参照台帳が未登録です。</p>
+</section>
+<section>
 <h2>2. 修正が許される範囲を選択</h2>
 <p>「修正前」の画像上を指でなぞり、変更を許す四角形を指定します。範囲外が一定以上変わった場合はFAILにします。</p>
 <div class="cols">
@@ -92,14 +110,41 @@ pre{white-space:pre-wrap;word-break:break-word;padding:12px;background:#101929;b
 </main>
 <footer>試験版：画素差分がPASSでも、人物の同一性や完成作品のCanon合格を意味しません。</footer>
 <script src="./image-qa.js"></script>
+<script src="./authority.js"></script>
 <script>
 (function(){
 "use strict";
-const I=window.ComicImageQA, $=id=>document.getElementById(id);
+const I=window.ComicImageQA, A=window.ComicAuthority, $=id=>document.getElementById(id);
 const MAX_FILE=10*1024*1024, MAX_PIXELS=4000000;
 const slots={master:null,before:null,after:null};
+const registries={mirror:null,himiko:null};
 let roi=null, anchor=null, comparison=null, report=null, prompt="", compositeRecord=null;
 const params=new URLSearchParams(location.search);
+function binding(){
+ const project=$("project").value, characterId=$("authorityId").value.trim();
+ return A.verify(registries[project],project,$("authorityKind").value,characterId,meta("master"));
+}
+function refreshAuthorityStatus(){
+ const b=binding(), project=$("project").value, reg=registries[project];
+ const entryCount=reg?reg.entries.length:0;
+ const labels={
+   NO_REGISTRY:"台帳未登録：端末で原本を選び、原本確認後に登録できます",
+   UNREGISTERED:"選択IDは未登録です。ハッシュ一致の判定はできません",
+   NO_IMAGE:"登録済みIDです。元のMASTER画像を選択して照合してください",
+   MATCH:"ハッシュ一致：登録済み原本と同一ファイルです（Canon承認の証明ではありません）",
+   MISMATCH:"警告：登録済みMASTER原本とは別のファイルです。顔・衣装の確認に使用しないでください",
+   WRONG_PROJECT:"作品が違います。登録を使い回さないでください"
+ };
+ $("authorityStatus").textContent=(labels[b.status]||b.status)+" ／ "+project+" 登録件数 "+entryCount;
+ $("authorityStatus").className="notice "+(b.status==="MISMATCH"?"fail":b.status==="MATCH"?"pass":"");
+ const allowed=!!slots.master && (!reg||b.status==="MATCH");
+ $("identity").disabled=!allowed;
+ if(!allowed)$("identity").checked=false;
+}
+function authorityMessage(s,failed){
+ $("authorityStatus").textContent=s;
+ $("authorityStatus").className="notice "+(failed?"fail":"pass");
+}
 if(["mirror","himiko"].includes(params.get("project")))$("project").value=params.get("project");
 if(params.get("panel")&&params.get("panel").length<=100)$("panelId").value=params.get("panel");
 function message(s,level=""){
@@ -157,6 +202,7 @@ function setStatus(){
      (item?item.name+" ("+item.width+"×"+item.height+", SHA-256 "+item.sha256.slice(0,14)+"…)":"未選択");
    holder.append(p);
  }
+ refreshAuthorityStatus();
 }
 function resetResult(){
  comparison=null;report=null;prompt="";compositeRecord=null;
@@ -230,10 +276,14 @@ function meta(s){
 function checks(){return Object.fromEntries(["identity","clothing","dialogue","story"].map(k=>[k,$(k).checked]))}
 function createReport(){
  if(!comparison)throw Error("画像比較を先に実行してください");
+ const b=binding(), registered=!!registries[$("project").value];
+ if(registered&&$("identity").checked&&b.status!=="MATCH")throw Error("MASTER参照ハッシュの照合が必要です");
  const value=I.makeReport({project:$("project").value,panelId:$("panelId").value.trim(),
    master:meta("master"),before:meta("before"),after:meta("after"),
    result:comparison,review:checks()});
  if(compositeRecord)value.composite={...compositeRecord};
+ value.authorityBinding={...b};
+ value.masterFileMatched=b.status==="MATCH";
  return value;
 }
 function compare(){
@@ -317,6 +367,7 @@ $("prompt").onclick=()=>{
    "修正元SHA-256:"+r.before.sha256,
    "修正後SHA-256:"+r.after.sha256,
    "人物MASTER参照SHA-256:"+(r.master?.sha256||"未登録。正式MASTERを確認"),
+   "ローカル参照台帳照合:"+(r.authorityBinding?.status||"NO_REGISTRY")+" / "+(r.authorityBinding?.characterId||"ID未指定"),
    "変更を許す領域（画像幅・高さに対する比率）:"+JSON.stringify(r.result.roi),
    "この領域以外の構図・人物・セリフ・小道具・背景を変えない。",
    "範囲外画素差分の結果:"+r.result.verdict+" / "+(r.result.outside.fraction*100).toFixed(2)+"%",
@@ -341,7 +392,42 @@ $("reset").onclick=()=>{
   if(comparison){report=null;$("details").textContent="目視確認の記録が変更されました。JSONを保存すると最新の結果を含めます。"}
  });
 });
-["project","panelId"].forEach(id=>$(id).addEventListener("change",resetResult));
+["project","panelId"].forEach(id=>$(id).addEventListener("change",()=>{resetResult();refreshAuthorityStatus()}));
+["authorityId","authorityKind"].forEach(id=>$(id).addEventListener("change",()=>{
+ resetResult();refreshAuthorityStatus();
+}));
+$("authorityAdd").onclick=()=>{
+ try{
+  const project=$("project").value;
+  if(!slots.master)throw Error("最初にMASTER画像を選択してください");
+  const detail={kind:$("authorityKind").value,characterId:$("authorityId").value.trim(),
+    label:$("authorityLabel").value.trim(),note:$("authorityNote").value.trim()};
+  const r=registries[project]||A.create(project);
+  const next=A.register(r,project,detail,meta("master"),$("authorityConfirm").checked);
+  registries[project]=next;$("authorityConfirm").checked=false;
+  resetResult();refreshAuthorityStatus();
+ }catch(err){authorityMessage("登録できません: "+err.message,true)}
+};
+$("authorityExport").onclick=()=>{
+ try{
+  const project=$("project").value,r=registries[project];
+  if(!r)throw Error("参照台帳がありません");
+  download(A.safeJson(r),"authority-registry-"+project+".json");
+  authorityMessage("参照台帳のハッシュをJSON保存しました。実画像は含まれません。",false);
+ }catch(err){authorityMessage("保存できません: "+err.message,true)}
+};
+$("authorityImport").addEventListener("change",async e=>{
+ const file=e.target.files?.[0];e.target.value="";
+ if(!file)return;
+ try{
+  if(file.size>256*1024||file.size<1)throw Error("256KB以内のJSONにしてください");
+  const reg=A.normalize(JSON.parse(await file.text())),project=$("project").value;
+  if(reg.project!==project)throw Error("作品が違う参照台帳は取り込めません");
+  if(registries[project]&&!confirm("現在の参照台帳を取り替えますか？必要なら先にJSONを保存してください。"))return;
+  registries[project]=reg;
+  $("authorityConfirm").checked=false;resetResult();refreshAuthorityStatus();
+ }catch(err){authorityMessage("読込失敗: "+err.message,true)}
+});
 window.addEventListener("pagehide",()=>["master","before","after"].forEach(revoke));
 redraw();setStatus();resetResult();
 })();
