@@ -133,3 +133,24 @@ test("スマホ画像ズームの切替・端末内原本再選択の安全策�
  assert(html.includes('overflow-x:auto'));
  assert(html.includes('$("imageFile").value=""'));
 });
+
+test("OCR候補を使ったレポートは出所だけ記録しAI検証と区別する",()=>{
+ const d=fixture(),r=Q.evaluate(d,"P01",ready(d),meta);
+ r.ocrAssistance={source:"local-desktop-ocr",engine:"tesseract-cli-jpn",
+   imageSha256:meta.sha256,humanReviewRequired:true,modelCertified:false};
+ const report=JSON.parse(Q.safeReport(r));
+ assert.equal(report.ocrAssistance.source,"local-desktop-ocr");
+ assert.equal(report.ocrAssistance.modelCertified,false);
+ assert.equal(report.ocrPerformed,false);
+ assert.equal(report.visualImageVerified,false);
+ assert.equal(report.canonApproved,false);
+});
+test("別画像OCRや偽装認定をレポートに書き込めない",()=>{
+ const d=fixture(),r=Q.evaluate(d,"P01",ready(d),meta);
+ r.ocrAssistance={source:"local-desktop-ocr",engine:"tesseract",
+   imageSha256:"f".repeat(64),humanReviewRequired:true,modelCertified:false};
+ assert.throws(()=>Q.safeReport(r),/OCR補助履歴/);
+ r.ocrAssistance.imageSha256=meta.sha256;
+ r.ocrAssistance.modelCertified=true;
+ assert.throws(()=>Q.safeReport(r),/OCR補助履歴/);
+});
