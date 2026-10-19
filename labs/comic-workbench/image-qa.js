@@ -67,7 +67,8 @@
     if(!insideTotal || !outsideTotal) fail("有効な画像内・画像外の両領域が必要です");
     const outsideFraction=outsideChanged/outsideTotal;
     const insideFraction=insideChanged/insideTotal;
-    const verdict=outsideFraction>cfg.maxOutsideFraction?"FAIL":
+    // A candidate that only edits protected pixels is never a successful local edit.
+    const verdict=outsideFraction>cfg.maxOutsideFraction || (insideChanged===0&&outsideChanged>0)?"FAIL":
       insideChanged+outsideChanged===0?"NO_CHANGE":"PASS";
     return {
       verdict, dimensions:{width,height}, roi:r,
