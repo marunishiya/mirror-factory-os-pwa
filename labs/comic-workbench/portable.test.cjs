@@ -31,6 +31,7 @@ test("Portable builder packages all three self-contained HTML files with embedde
   assert(result.files.includes("index.html"));
   assert(result.files.includes("image-lab.html"));
   assert(result.files.includes("balloon-lab.html"));
+  assert(result.files.includes("ocr_sidecar.py"));
   assert(result.files.includes("使い方.txt"));
   const index=fs.readFileSync(path.join(out,"index.html"),"utf8");
   const image=fs.readFileSync(path.join(out,"image-lab.html"),"utf8");
@@ -41,6 +42,7 @@ test("Portable builder packages all three self-contained HTML files with embedde
   }
   assert(!/<script\s+src=/.test(index+image+balloon));
   assert(balloon.includes("ComicBalloonQA"));
+  assert(balloon.includes("ComicOcrSidecar"));
   assert(balloon.includes('id="demo"'));
   assert(balloon.includes('id="imgCanvas"'));
   assert(image.includes('id="sample"'));
