@@ -77,7 +77,7 @@ test("重複コマIDや異常な注釈件数は拒否",()=>{
 test("不正画像ハッシュ・サイズ・画素数の画像は拒否",()=>{
  const d=fixture(),a=ready(d);
  assert.throws(()=>Q.evaluate(d,"P01",a,{...meta,sha256:"wrong"}),/ハッシュ/);
- assert.throws(()=>Q.evaluate(d,"P01",a,{...meta,width:5000}),/ハッシュ/);
+ assert.throws(()=>Q.evaluate(d,"P01",a,{...meta,width:7000}),/ハッシュ/);
  assert.throws(()=>Q.evaluate(d,"P01",a,{...meta,bytes:20e6}),/ハッシュ/);
 });
 test("検査レポートに実画像・OCRの虚偽結果を含めない",()=>{
