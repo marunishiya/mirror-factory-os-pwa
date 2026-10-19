@@ -244,8 +244,9 @@ $("import").addEventListener("change",async e=>{
  if(dirty&&!window.confirm("未保存の変更を破棄して読み込みますか？"))return;
  try{
   const next=JSON.parse(await file.text());W.assertDocument(next);
-  doc=next;selected=doc.pages.flatMap(x=>x.panels)[0]?.id;
-  if(!selected)throw Error("コマがありません");
+  const firstId=next.pages.flatMap(x=>x.panels)[0]?.id;
+  if(!firstId)throw Error("コマがありません");
+  doc=next;selected=firstId;
   dirty=false;promptText="";render();fileMessage("JSONを読み込みました。正式Canonの真偽は別途確認してください。");
  }catch(err){fileMessage("読込失敗: "+err.message,true)}
 });
