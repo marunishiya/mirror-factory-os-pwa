@@ -89,6 +89,7 @@
     if (origin.origin !== "mirror_factory_os_v09" ||
         !Array.isArray(origin.originalSourceLines) ||
         !Array.isArray(origin.expectedPanels) ||
+        !Array.isArray(origin.speakerBindings) ||
         origin.originalSourceLines.length > 400 ||
         typeof origin.originalLocked !== "boolean") {
       return { status: "SOURCE_UNVERIFIED", mismatches: ["原稿の参照情報が不足しています"], verified: false };
@@ -127,6 +128,16 @@
     const indexed = expected.indices.every((idx,i) => Number.isInteger(idx) && idx >= 0 &&
       idx < origin.originalSourceLines.length);
     if (!indexed) add("元原稿の対応行番号が不正です");
+    const signaturesMatch = indexed && expected.indices.length === expected.lines.length &&
+      origin.speakerBindings.length === origin.originalSourceLines.length &&
+      expected.indices.every((idx,i) => {
+        const raw = origin.originalSourceLines[idx], binding = origin.speakerBindings[idx];
+        return raw && binding && typeof binding.speaker === "string" &&
+          raw[0] === binding.literal &&
+          expected.lines[i]?.speaker === binding.speaker &&
+          expected.lines[i]?.text === raw[1];
+      });
+    if (!signaturesMatch) add("コピー時の話者ID対応／確定原稿本文の記録が一致しません");
     const flat = origin.expectedPanels.flatMap(p => p?.indices || []);
     if (flat.length !== origin.originalSourceLines.length ||
         flat.some((n,i) => n !== i)) add("元原稿の行割付に欠落・重複・順序違いがあります");
@@ -281,6 +292,16 @@
     return { document: result, newPanelId: fork.id };
   }
 
+  function restoreSourceLines(doc, panelId) {
+    assertDocument(doc);
+    if (!doc.sourceInfo) throw Error("FACTORY原稿から取り込んだデータではありません");
+    const expected = doc.sourceInfo.expectedPanels?.find(x => x.id === panelId);
+    if (!expected || !Array.isArray(expected.lines)) throw Error("元原稿との対応がありません");
+    return edit(doc, panelId, {
+      lines: expected.lines.map(l => ({ speaker: l.speaker, target: "", text: l.text }))
+    });
+  }
+
   function promptFor(doc, panelId) {
     assertDocument(doc);
     const { panel: p } = locate(doc, panelId);
@@ -342,5 +363,5 @@
     };
   }
   return { VERSION, CHECKS, BASES, assertDocument, inspect, panelReport, edit, undo,
-    approve, forkDraft, promptFor, sourceReport, demo };
+    approve, forkDraft, promptFor, sourceReport, restoreSourceLines, demo };
 });
