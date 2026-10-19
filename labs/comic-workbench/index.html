@@ -50,6 +50,21 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
     <p><a id="imageLab" href="./image-lab.html">画像の部分修正・MASTER参照検査へ →</a></p>
   </section>
   <section>
+    <h2>作業データ保護・復元</h2>
+    <p class="small">作業を保存したタイミングで、現在とひとつ前の草稿をこの端末に保持できます。初期設定は<strong>無効</strong>。有効化した端末の別利用者から内容を閲覧される可能性があるため、共有端末では使わないでください。</p>
+    <div class="actions">
+      <button id="vaultEnable" type="button">端末内の復旧保存を有効化</button>
+      <button id="vaultDisable" type="button">今後の自動保存を停止</button>
+    </div>
+    <div class="actions" style="margin-top:10px">
+      <button id="vaultRestoreLatest" type="button">最新の草稿を復元</button>
+      <button id="vaultRestorePrevious" type="button">ひとつ前を復元</button>
+      <button id="vaultClear" class="danger" type="button">復旧データ2件を消去</button>
+    </div>
+    <p id="vaultStatus" role="status" class="small muted">保存状態を確認中です。</p>
+    <p class="small warning">復旧ポイントは暗号化されません。ブラウザの保存領域が削除されると消失します。重要な作品は必ず「JSON保存」も併用してください。編集中の未保存テキストは復元対象外です。</p>
+  </section>
+  <section>
     <h2>FACTORY OSから安全に連携</h2>
     <p class="small">既存の原稿・人物情報を、<strong>読み取り専用の草稿コピー</strong>として取り込みます。MASTER画像や正式Canonの承認は引き継ぎません。</p>
     <div class="actions"><button type="button" id="factoryScan">この端末のFACTORY OSを読み込む</button></div>
@@ -109,12 +124,69 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
 <script src="./engine.js"></script>
 <script src="./factory-bridge.js"></script>
 <script src="./dialogue-codec.js"></script>
+<script src="./sha256.js"></script>
+<script src="./draft-vault.js"></script>
 <script>
 (function(){
 "use strict";
-const W=window.ComicWorkbench,B=window.ComicFactoryBridge,C=window.ComicDialogueCodec;
+const W=window.ComicWorkbench,B=window.ComicFactoryBridge,C=window.ComicDialogueCodec,V=window.ComicDraftVault;
 const $=id=>document.getElementById(id);
 let doc=W.demo("mirror"), selected="P01", dirty=false, promptText="",factorySource=null;
+function refreshVault(statusMessage){
+ try{
+  const state=V.inspect(window.localStorage,W.assertDocument);
+  $("vaultEnable").disabled=state.enabled;
+  $("vaultDisable").disabled=!state.enabled;
+  $("vaultRestoreLatest").disabled=state.latest.state!=="VALID";
+  $("vaultRestorePrevious").disabled=state.previous.state!=="VALID";
+  const info=name=>{
+    const a=state[name];
+    return a.state==="VALID"?
+      a.title+"｜"+a.createdAt+"｜"+a.selected:
+      a.state==="CORRUPTED"?"破損（復元不可）":"なし";
+  };
+  $("vaultStatus").textContent=(statusMessage?statusMessage+" / ":"")+
+    (state.enabled?"端末内の復旧保存：有効":"端末内の復旧保存：無効")+
+    "\n 最新: "+info("latest")+"\n ひとつ前: "+info("previous");
+ }catch(e){
+  $("vaultStatus").textContent="端末内の保存領域を使えません："+e.message+"。手動JSON保存を利用してください。";
+  $("vaultRestoreLatest").disabled=true;$("vaultRestorePrevious").disabled=true;
+ }
+}
+function checkpoint(){
+ try{
+  const r=V.save(window.localStorage,doc,selected,W.assertDocument);
+  refreshVault(r.saved?"端末内に草稿を記録しました":"復旧保存は無効です");
+  if(!r.saved)return;
+ }catch(e){
+  refreshVault("端末内の保存に失敗しました。必ずJSONを手動保存してください："+e.message);
+ }
+}
+function loadVaultSlot(slot){
+ try{
+  if(dirty&&!window.confirm("未保存の入力は復元できません。破棄しますか？"))return;
+  const checkpoint=V.restore(window.localStorage,slot,W.assertDocument);
+  if(!window.confirm("草稿「"+checkpoint.doc.title+"」を復元して、現在のラボ作業を置き換えますか？ 元のFACTORY OSには書き戻しません。"))return;
+  doc=checkpoint.doc;selected=checkpoint.selected;dirty=false;promptText="";render();
+  refreshVault("草稿を復元しました。正式Canonの承認にはなりません。");
+ }catch(e){refreshVault("復元できません："+e.message)}
+}
+$("vaultEnable").onclick=()=>{
+ if(!window.confirm("この端末のブラウザ保存領域に、作品の文章・原稿を暗号化せず保存します。共有端末では推奨しません。有効にしますか？"))return;
+ try{V.setEnabled(window.localStorage,true);checkpoint()}
+ catch(e){refreshVault("保存を有効にできません："+e.message)}
+};
+$("vaultDisable").onclick=()=>{
+ try{V.setEnabled(window.localStorage,false);refreshVault("今後の自動保存を停止しました。保存済みの復旧データは残ります。")}
+ catch(e){refreshVault("停止できません："+e.message)}
+};
+$("vaultRestoreLatest").onclick=()=>loadVaultSlot("latest");
+$("vaultRestorePrevious").onclick=()=>loadVaultSlot("previous");
+$("vaultClear").onclick=()=>{
+ if(!window.confirm("保存された最新・ひとつ前の復旧データを完全に消去しますか？ FACTORY OSのデータは消去しません。"))return;
+ try{V.clear(window.localStorage);refreshVault("復旧データを消去しました")}
+ catch(e){refreshVault("消去できません："+e.message)}
+};
 const CHECK_LABELS={
  identity:"顔・体型・服装がMASTERと一致（人が画像を見て確認）",
  bubbleSpeaker:"セリフ・話者・吹き出し尻尾を確認",
@@ -229,31 +301,31 @@ function save(){
    visualChecks:Object.fromEntries(W.CHECKS.map(k=>[k,$("chk-"+k).checked]))
  };
  if(doc.project==="himiko")patch.historicalClaims=splitLines(value("historicalClaims"),"history");
- doc=W.edit(doc,selected,patch);dirty=false;render();fileMessage("保存完了："+selected+" のみ revision を更新しました。");
+ doc=W.edit(doc,selected,patch);dirty=false;render();checkpoint();fileMessage("保存完了："+selected+" のみ revision を更新しました。");
 }
 $("save").onclick=()=>guarded(save);
 $("qa").onclick=()=>guarded(()=>{if(dirty){fileMessage("未保存の入力があります。保存してからQAしてください。",true);return}report();fileMessage("構造化QAを再実行しました（画像検査は未実施）。")});
 $("approve").onclick=()=>guarded(()=>{
  if(dirty){fileMessage("未保存の入力があります。保存してください。",true);return}
  if(!window.confirm("人による画像チェックが本当に完了しましたか？ この操作は正式Canon承認ではありません。"))return;
- doc=W.approve(doc,selected);render();fileMessage("コマを検査済みとしてロックしました。");
+ doc=W.approve(doc,selected);render();checkpoint();fileMessage("コマを検査済みとしてロックしました。");
 });
 $("fork").onclick=()=>guarded(()=>{
- const result=W.forkDraft(doc,selected);doc=result.document;selected=result.newPanelId;dirty=false;render();fileMessage("既存の承認コマを保持したまま、新規草稿を作成しました。");
+ const result=W.forkDraft(doc,selected);doc=result.document;selected=result.newPanelId;dirty=false;render();checkpoint();fileMessage("既存の承認コマを保持したまま、新規草稿を作成しました。");
 });
 $("undo").onclick=()=>guarded(()=>{if(dirty&&!window.confirm("編集中の内容を破棄して取り消しますか？"))return;
- doc=W.undo(doc);dirty=false;render();fileMessage("直前の編集を取り消しました。");
+ doc=W.undo(doc);dirty=false;render();checkpoint();fileMessage("直前の編集を取り消しました。");
 });
 $("restoreSource").onclick=()=>guarded(()=>{
  if(dirty&&!window.confirm("まだ保存していない入力を破棄し、確定セリフだけ元に戻しますか？"))return;
  if(!window.confirm("このコマのセリフと話者をFACTORY取込時に戻します。元のPWAや他コマには変更しません。続けますか？"))return;
- doc=W.restoreSourceLines(doc,selected);dirty=false;promptText="";render();
+ doc=W.restoreSourceLines(doc,selected);dirty=false;promptText="";render();checkpoint();
  fileMessage("話者・セリフを復元しました。目視QAは再確認してください。");
 });
 $("mirror").onclick=()=>reset("mirror");$("himiko").onclick=()=>reset("himiko");
 function reset(project){
  if(!window.confirm("現在の内容を破棄して、非Canonデモを読み込みますか？ JSON保存済みか確認してください。"))return;
- doc=W.demo(project);selected=doc.pages[0].panels[0].id;dirty=false;promptText="";render();fileMessage("非Canonデモを読み込みました。");
+ doc=W.demo(project);selected=doc.pages[0].panels[0].id;dirty=false;promptText="";render();checkpoint();fileMessage("非Canonデモを読み込みました。");
 }
 function factoryMessage(m,bad=false){
  const out=$("factoryMsg");out.textContent=m;out.className=bad?"small error":"small good";
@@ -292,7 +364,7 @@ $("factoryUse").onclick=()=>guarded(()=>{
    converted.title+"」の草稿に置き換えます。"+lineCount+
    "行を取り込みます。ラボ側で保存していない作業は失われます。続けますか？"))return;
  doc=converted;selected=doc.pages[0].panels[0].id;dirty=false;promptText="";
- render();
+ render();checkpoint();
  const warnings=converted.importWarnings||[];
  factoryMessage("草稿コピーを作成しました。元のFACTORY OSは変更していません。"+
    (warnings.length?" 注意："+warnings.join("／"):" 本体の正式MASTERと目視QAは別途必要です。"));
@@ -323,11 +395,11 @@ $("import").addEventListener("change",async e=>{
   const firstId=next.pages.flatMap(x=>x.panels)[0]?.id;
   if(!firstId)throw Error("コマがありません");
   doc=next;selected=firstId;
-  dirty=false;promptText="";render();fileMessage("JSONを読み込みました。正式Canonの真偽は別途確認してください。");
+  dirty=false;promptText="";render();checkpoint();fileMessage("JSONを読み込みました。正式Canonの真偽は別途確認してください。");
  }catch(err){fileMessage("読込失敗: "+err.message,true)}
 });
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
-render();
+render();refreshVault();
 })();
 </script>
 </body>
