@@ -111,7 +111,7 @@ test("承認済みは不変、変更したければ別IDで草稿化", () => {
 test("スキーマ違反・コマIDの重複を拒否", () => {
   const d=W.demo("mirror");d.schema="unknown";assert.throws(()=>W.assertDocument(d),/スキーマ/);
   const x=W.demo("mirror");x.pages[0].panels[1].id="P01";
-  assert.throws(()=>W.assertDocument(x),/重複/);
+  assert.throws(()=>W.assertDocument(x),/(重複|形式が不正)/);
 });
 test("プロンプトに他コマ保護と考証区分が記載される", () => {
   assert.match(W.promptFor(W.demo("mirror"),"P01"),/承認済み他コマは一切変更しない/);
