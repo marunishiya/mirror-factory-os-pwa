@@ -214,7 +214,7 @@ function resetResult(){
 }
 async function loadInto(slot,file){
  const id=slot+"File";
- if(!file){revoke(slot);if(slot==="before")roi=null;resetResult();redraw();setStatus();return}
+ if(!file){revoke(slot);if(slot==="before")roi=null;if(slot==="master")$("authorityConfirm").checked=false;resetResult();redraw();setStatus();return}
  // Import is transactional: keep the old file if the new one is invalid.
  const next=await readFile(file);
  revoke(slot);slots[slot]=next;
@@ -397,7 +397,7 @@ $("reset").onclick=()=>{
  $("authorityConfirm").checked=false;resetResult();refreshAuthorityStatus();
 }));
 ["authorityId","authorityKind"].forEach(id=>$(id).addEventListener("change",()=>{
- resetResult();refreshAuthorityStatus();
+ $("authorityConfirm").checked=false;resetResult();refreshAuthorityStatus();
 }));
 $("authorityAdd").onclick=()=>{
  try{
