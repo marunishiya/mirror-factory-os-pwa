@@ -74,7 +74,9 @@ pre{white-space:pre-wrap;word-break:break-word;padding:12px;background:#101929;b
 <section>
 <h2>3. 画素差分検査</h2>
 <p class="muted small">各画素のRGBA最大差が24を超える場合を「変化あり」と判定。修正範囲外の変化画素率が0.5%を超えるとFAILです。領域全体が60%以上の場合も受付不可。画像圧縮や色補正によってFAILになることがあります。</p>
-<div class="row"><button class="primary" id="compare" type="button">修正前後を比較する</button><button id="reset" type="button">画像と結果を消去する</button></div>
+<div class="row"><button class="primary" id="compare" type="button">修正前後を比較する</button><button id="compose" type="button">指定範囲だけ合成してPNG保存</button><button id="reset" type="button">画像と結果を消去する</button></div>
+<p id="composeStatus" class="small muted">範囲内だけを候補画像で差し替え、範囲外は元の画素を保持します。合成画像は保存操作をした時だけ端末にダウンロードされます。</p>
+<div class="pic"><h3>合成結果（変更範囲以外は元画像）</h3><canvas id="mergedCanvas" width="480" height="280" aria-label="範囲指定合成画像"></canvas></div>
 <div id="result" class="notice" role="status" aria-live="polite">2画像を指定し、修正可能領域を指で選択してください。</div>
 </section>
 <section>
@@ -96,7 +98,7 @@ pre{white-space:pre-wrap;word-break:break-word;padding:12px;background:#101929;b
 const I=window.ComicImageQA, $=id=>document.getElementById(id);
 const MAX_FILE=10*1024*1024, MAX_PIXELS=4000000;
 const slots={master:null,before:null,after:null};
-let roi=null, anchor=null, comparison=null, report=null, prompt="";
+let roi=null, anchor=null, comparison=null, report=null, prompt="", compositeRecord=null;
 const params=new URLSearchParams(location.search);
 if(["mirror","himiko"].includes(params.get("project")))$("project").value=params.get("project");
 if(params.get("panel")&&params.get("panel").length<=100)$("panelId").value=params.get("panel");
@@ -157,8 +159,10 @@ function setStatus(){
  }
 }
 function resetResult(){
- comparison=null;report=null;prompt="";
+ comparison=null;report=null;prompt="";compositeRecord=null;
  $("details").textContent="変更後の画像を比較してから検査レポートを保存してください。";
+ $("composeStatus").textContent="合成画像は未作成です。";
+ drawEmpty("mergedCanvas","合成前");
  message("修正前後の画像と指定領域を比較してください。");
 }
 async function loadInto(slot,file){
@@ -225,9 +229,11 @@ function meta(s){
 function checks(){return Object.fromEntries(["identity","clothing","dialogue","story"].map(k=>[k,$(k).checked]))}
 function createReport(){
  if(!comparison)throw Error("画像比較を先に実行してください");
- return I.makeReport({project:$("project").value,panelId:$("panelId").value.trim(),
+ const value=I.makeReport({project:$("project").value,panelId:$("panelId").value.trim(),
    master:meta("master"),before:meta("before"),after:meta("after"),
    result:comparison,review:checks()});
+ if(compositeRecord)value.composite={...compositeRecord};
+ return value;
 }
 function compare(){
  if(!slots.before||!slots.after)throw Error("修正前後の2画像を指定してください");
@@ -252,6 +258,38 @@ function compare(){
  report=createReport();$("details").textContent=JSON.stringify(report,null,2);
 }
 $("compare").onclick=()=>{try{compare()}catch(e){comparison=null;report=null;drawEmpty("diffCanvas","検査できません");message("検査できません: "+e.message,"fail")}};
+$("compose").onclick=async()=>{
+ try{
+  if(!slots.before||!slots.after||!roi)throw Error("修正前後の画像と編集領域を指定してください");
+  const a=slots.before,b=slots.after;
+  if(a.width!==b.width||a.height!==b.height)throw Error("修正前後の画像サイズを揃えてください");
+  const before=pixels(a),candidate=pixels(b);
+  const merged=I.composeRegion(before,candidate,a.width,a.height,roi);
+  const check=I.compare(before,merged,a.width,a.height,roi);
+  if(check.outside.changed!==0)throw Error("保護領域が変わりました。合成を中止します");
+  if(check.verdict!=="PASS")throw Error("指定領域の画素に変化がありません");
+  const can=$("mergedCanvas");can.width=a.width;can.height=a.height;
+  const ctx=can.getContext("2d");if(!ctx)throw Error("合成Canvasを作成できません");
+  ctx.putImageData(new ImageData(merged,a.width,a.height),0,0);
+  const blob=await new Promise((resolve,reject)=>can.toBlob(x=>x?resolve(x):
+    reject(Error("PNG生成に失敗しました")),"image/png"));
+  const hash=await crypto.subtle.digest("SHA-256",await blob.arrayBuffer());
+  const sha=[...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  const safe=$("panelId").value.trim().replace(/[^0-9a-zA-Z_-]/g,"_").slice(0,70)||"panel";
+  const filename="local-composite-"+$("project").value+"-"+safe+".png";
+  compositeRecord={filename,sha256:sha,width:a.width,height:a.height,
+    originSha256:a.sha256,candidateSha256:b.sha256,roi:{...roi},
+    protectedOutsideChangedPixels:check.outside.changed,
+    note:"PNGを端末内で生成。参照MASTER/正式Canonへの変更はありません。"};
+  const url=URL.createObjectURL(blob),link=document.createElement("a");
+  link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $("composeStatus").textContent="PNG保存: "+filename+" / SHA-256 "+sha+
+    " / 領域外の変更画素0件。検査レポートJSONに合成結果のハッシュを記録できます。";
+  message("指定範囲だけを合成しました。範囲外の画素はすべて元画像と一致します。作品としての最終承認は別途必要です。","pass");
+ }catch(e){compositeRecord=null;message("合成失敗: "+e.message,"fail")}
+};
+
 function download(text,filename){
  const url=URL.createObjectURL(new Blob([text],{type:"application/json"}));
  const a=document.createElement("a");a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();
@@ -299,7 +337,7 @@ $("reset").onclick=()=>{
  });
 });
 window.addEventListener("pagehide",()=>["master","before","after"].forEach(revoke));
-redraw();setStatus();
+redraw();setStatus();resetResult();
 })();
 </script>
 </body>
