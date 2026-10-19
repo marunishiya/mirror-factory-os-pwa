@@ -160,6 +160,7 @@ function setStatus(){
 }
 function resetResult(){
  comparison=null;report=null;prompt="";compositeRecord=null;
+ for(const id of ["identity","clothing","dialogue","story"])$(id).checked=false;
  $("details").textContent="変更後の画像を比較してから検査レポートを保存してください。";
  $("composeStatus").textContent="合成画像は未作成です。";
  drawEmpty("mergedCanvas","合成前");
@@ -261,6 +262,7 @@ $("compare").onclick=()=>{try{compare()}catch(e){comparison=null;report=null;dra
 $("compose").onclick=async()=>{
  try{
   if(!slots.before||!slots.after||!roi)throw Error("修正前後の画像と編集領域を指定してください");
+  if(!comparison)compare();
   const a=slots.before,b=slots.after;
   if(a.width!==b.width||a.height!==b.height)throw Error("修正前後の画像サイズを揃えてください");
   const before=pixels(a),candidate=pixels(b);
@@ -331,11 +333,12 @@ $("reset").onclick=()=>{
  if(!confirm("選択した画像・検査結果をこの画面から消去しますか？"))return;
  ["master","before","after"].forEach(revoke);roi=null;anchor=null;resetResult();redraw();setStatus();
 };
-["identity","clothing","dialogue","story","project","panelId"].forEach(id=>{
+["identity","clothing","dialogue","story"].forEach(id=>{
  $(id).addEventListener("change",()=>{
-  if(comparison){report=null;$("details").textContent="確認内容が変更されました。JSONを保存すると新しい確認内容を含めます。"}
+  if(comparison){report=null;$("details").textContent="目視確認の記録が変更されました。JSONを保存すると最新の結果を含めます。"}
  });
 });
+["project","panelId"].forEach(id=>$(id).addEventListener("change",resetResult));
 window.addEventListener("pagehide",()=>["master","before","after"].forEach(revoke));
 redraw();setStatus();resetResult();
 })();
