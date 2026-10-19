@@ -104,7 +104,14 @@
   if(!value||value.schema!==SCHEMA||!Array.isArray(value.annotations)||value.annotations.length>MAX_LINES)
     err("保存できる検査結果ではありません");
   const data=copy(value);
-  // Explicitly do not include actual image bytes or assert a source-of-truth Canon approval.
+  // Never let a caller turn a human annotation report into a fake automated visual PASS.
+  data.imageAnalyzedByAI=false;
+  data.ocrPerformed=false;
+  data.visualImageVerified=false;
+  data.canonApproved=false;
+  delete data.imageBytes;
+  delete data.imageData;
+  delete data.dataUrl;
   return JSON.stringify(data,null,2);
  }
  return Object.freeze({SCHEMA,newAnnotations,validateAnnotations,evaluate,safeReport,imageMeta});
