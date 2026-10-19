@@ -78,6 +78,67 @@
     throw Error("対象コマが見つかりません");
   }
 
+  // Strict compare to the FACTORY source snapshot, not to mutable display text.
+  // A snapshot is a local evidence record, not a cryptographic proof of Canon.
+  function sourceReport(doc, panelId) {
+    assertDocument(doc);
+    const origin = doc.sourceInfo;
+    if (!origin) return { status: "NOT_IMPORTED", mismatches: [], verified: false };
+    const mismatch = [];
+    const add = (message) => mismatch.push(message);
+    if (origin.origin !== "mirror_factory_os_v09" ||
+        !Array.isArray(origin.originalSourceLines) ||
+        !Array.isArray(origin.expectedPanels) ||
+        origin.originalSourceLines.length > 400 ||
+        typeof origin.originalLocked !== "boolean") {
+      return { status: "SOURCE_UNVERIFIED", mismatches: ["原稿の参照情報が不足しています"], verified: false };
+    }
+    const signature = (lines) => {
+      let h = 2166136261 >>> 0;
+      const text = JSON.stringify(lines);
+      for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      return h.toString(16).padStart(8, "0");
+    };
+    if (!origin.originalSourceLines.every(line => Array.isArray(line) && line.length === 2 &&
+        typeof line[0] === "string" && typeof line[1] === "string")) {
+      return { status: "SOURCE_UNVERIFIED", mismatches: ["元原稿の行情報が不正です"], verified: false };
+    }
+    const originalHash = signature(origin.originalSourceLines);
+    const hashVerified = origin.originalLocked === true &&
+      typeof origin.sourceLockHash === "string" && origin.sourceLockHash === originalHash;
+    if (!hashVerified) add("元原稿のSOURCE LOCK署名が存在しないか、整合していません");
+    const expected = origin.expectedPanels.find(x => x && x.id === panelId);
+    if (!expected || !Array.isArray(expected.lines) || !Array.isArray(expected.indices)) {
+      add("このコマに対応する元原稿の参照がありません");
+      return { status: "SOURCE_UNVERIFIED", mismatches: mismatch, verified: false };
+    }
+    const panels = doc.pages.flatMap(pg => pg.panels);
+    const panel = panels.find(p => p.id === panelId);
+    if (!panel) add("対象コマが存在しません");
+    const lines = panel?.lines || [];
+    if (expected.indices.length !== expected.lines.length || expected.lines.length !== lines.length) {
+      add("確定セリフの行数が変更されています");
+    }
+    const same = expected.lines.length === lines.length &&
+      expected.lines.every((line,i) => line &&
+        typeof line.speaker === "string" && typeof line.text === "string" &&
+        lines[i].speaker === line.speaker && lines[i].text === line.text);
+    if (!same) add("確定セリフの話者・本文・順序が元原稿と一致しません");
+    const indexed = expected.indices.every((idx,i) => Number.isInteger(idx) && idx >= 0 &&
+      idx < origin.originalSourceLines.length);
+    if (!indexed) add("元原稿の対応行番号が不正です");
+    const flat = origin.expectedPanels.flatMap(p => p?.indices || []);
+    if (flat.length !== origin.originalSourceLines.length ||
+        flat.some((n,i) => n !== i)) add("元原稿の行割付に欠落・重複・順序違いがあります");
+    const ids = origin.expectedPanels.map(p => p.id);
+    if (new Set(ids).size !== ids.length) add("参照元コマの識別子が重複しています");
+    const diverged = mismatch.some(m => !m.includes("SOURCE LOCK署名"));
+    const status = diverged ? "DIVERGED" : hashVerified ? "MATCH" : "SOURCE_UNVERIFIED";
+    return { status, mismatches: mismatch, verified: status === "MATCH",
+      originalHash, recordedHash: origin.sourceLockHash || null,
+      panelId, comparedLines: lines.length };
+  }
+
   function inspectPanel(doc, page, p) {
     const out = [];
     const add = (severity, code, message) => out.push(issue(severity, code, page.id, p.id, message));
@@ -113,6 +174,14 @@
         }
       }
     }
+    if (doc.sourceInfo) {
+      const source = sourceReport(doc, p.id);
+      if (source.status !== "MATCH") {
+        add(source.status === "DIVERGED" ? "ERROR" : "WARN",
+          "SOURCE_LOCK_" + source.status,
+          "FACTORY OS原稿との差分／参照確認: " + (source.mismatches.join("／") || source.status));
+      }
+    }
     if (!p.assetRef.trim()) add("WARN", "IMAGE_UNLINKED", "作画画像の参照先が未設定です");
     for (const key of CHECKS) if (!p.visualChecks[key]) {
       add("WARN", "MANUAL_QA_PENDING", "人による目視確認が未完了: " + key);
@@ -142,6 +211,12 @@
     if (panel.status === "approved") throw Error("承認済みコマは変更できません。新しい草稿に複製してください");
     const before = copy(panel);
     for (const [key, val] of Object.entries(patch)) panel[key] = copy(val);
+    // Any changed visual or story source invalidates all previous manual approvals.
+    const meaningful = ["scene","phase","cast","requiredCast","lines","requiredProps",
+      "visibleProps","requiredClues","visibleClues","hiddenClues","historicalClaims","assetRef"];
+    if (meaningful.some(key => JSON.stringify(before[key]) !== JSON.stringify(panel[key]))) {
+      panel.visualChecks = Object.fromEntries(CHECKS.map(k => [k, false]));
+    }
     panel.revision++;
     result.audit = result.audit || [];
     if (result.audit.length >= 500) throw Error("監査履歴が上限です。JSONを書き出して新規作業を始めてください");
@@ -171,6 +246,9 @@
     const result = copy(doc);
     const { panel, page } = locate(result, panelId);
     if (panel.status !== "draft") throw Error("承認済みです");
+    if (result.sourceInfo && sourceReport(result, panelId).status !== "MATCH") {
+      throw Error("元原稿のSOURCE LOCK照合が未合格です。話者・セリフを元に戻し、要確認情報を解消してください");
+    }
     const errors = inspectPanel(result, page, panel).filter(x => x.severity === "ERROR");
     if (errors.length) throw Error("未解決のERRORがあります (" + errors.length + "件)");
     if (!panel.assetRef.trim() || CHECKS.some(k => !panel.visualChecks[k])) {
@@ -206,6 +284,9 @@
   function promptFor(doc, panelId) {
     assertDocument(doc);
     const { panel: p } = locate(doc, panelId);
+    if (doc.sourceInfo && sourceReport(doc, panelId).status !== "MATCH") {
+      throw Error("元原稿との照合が未合格です。改変済みのセリフを作画指示に転記できません");
+    }
     const byId = new Map(doc.canon.characters.map(c => [c.id, c]));
     return [
       "【コマ単位の作画指示・ドラフト】", "作品: " + doc.project + " / " + doc.title,
@@ -261,5 +342,5 @@
     };
   }
   return { VERSION, CHECKS, BASES, assertDocument, inspect, panelReport, edit, undo,
-    approve, forkDraft, promptFor, demo };
+    approve, forkDraft, promptFor, sourceReport, demo };
 });
