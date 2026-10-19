@@ -77,11 +77,13 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
     <h2 id="activeTitle">編集するコマ</h2>
     <p id="authority" class="small muted"></p>
     <p id="lock" class="notice small"></p>
+    <p id="sourceLockStatus" class="notice small" role="status">原稿照合が未実行です。</p>
     <div id="editor"></div>
     <div class="actions" style="margin-top:14px">
       <button class="primary" id="save" type="button">このコマだけ保存</button>
       <button id="qa" type="button">QA再実行</button>
       <button id="undo" type="button">直前の編集を取り消す</button>
+      <button id="restoreSource" type="button">確定セリフだけ元に戻す</button>
       <button id="approve" type="button">検査済みとして承認・ロック</button>
       <button id="fork" type="button">承認コマから新規草稿</button>
     </div>
@@ -145,6 +147,13 @@ function render(){
  $("authority").textContent="MASTER参照（デモ用の文字情報のみ・実物は読み込んでいません）: "+doc.canon.reference;
  $("activeTitle").textContent=p.id+" — "+(p.status==="approved"?"承認済み／編集禁止":"草稿")+" / revision "+p.revision;
  $("lock").textContent=p.status==="approved"?"承認済みコマです。修正するには複製して新規草稿を作ります。":"選択コマ以外は変更しません。目視確認は人が実際の画像を見て実施してください。";
+ const source=W.sourceReport(doc,selected);
+ $("sourceLockStatus").textContent=source.status==="NOT_IMPORTED"?
+   "SOURCE LOCK：FACTORYからの取込ではありません。正式原稿との照合は別途必要です。" :
+   source.status==="MATCH"?"SOURCE LOCK一致：元原稿の話者・セリフ・順序を保持（画像未検査）。":
+   "SOURCE LOCK未合格："+source.status+"｜"+source.mismatches.join("／");
+ $("sourceLockStatus").className=source.status==="MATCH"?"notice small good":"notice small warning";
+ $("restoreSource").disabled=!doc.sourceInfo||p.status==="approved";
  const panels=$("panels");panels.replaceChildren();
  doc.pages.forEach(pg=>{
   addText(panels,"p","ページ: "+pg.id,"small muted");
@@ -188,7 +197,7 @@ function report(){
  const issues=W.inspect(doc), specific=issues.filter(x=>x.panelId===selected);
  const E=issues.filter(x=>x.severity==="ERROR").length;
  const WARN=issues.filter(x=>x.severity==="WARN").length;
- $("summary").textContent="全体: ERROR "+E+"件 / WARN "+WARN+"件 ｜ 選択コマ: "+specific.length+"件";
+ $("summary").textContent="全体: ERROR "+E+"件 / WARN "+WARN+"件 ｜ 選択コマ: "+specific.length+"件 ｜ SOURCE LOCK: "+W.sourceReport(doc,selected).status;
  const holder=$("issues");holder.replaceChildren();
  if(!specific.length)addText(holder,"p","構造化チェックで問題は見つかりません。画像検査の自動実施を意味しません。","good");
  specific.forEach(x=>{
@@ -199,10 +208,12 @@ function report(){
 }
 function splitLines(raw,kind){
  return raw.split("\n").filter(s=>s.trim()).map((row,n)=>{
-  const parts=row.split("|").map(s=>s.trim());
-  if(parts.length<3)throw Error(kind+"の"+(n+1)+"行目は「ID | ID | 本文」の形式にしてください");
-  return kind==="history"?{subject:parts[0],basis:parts[1],source:parts.slice(2).join("|")}:
-   {speaker:parts[0],target:parts[1],text:parts.slice(2).join("|")};
+  const first=row.indexOf("|"),second=row.indexOf("|",first+1);
+  if(first<0||second<0)throw Error(kind+"の"+(n+1)+"行目は「ID | ID | 本文」の形式にしてください");
+  const a=row.slice(0,first).trim(),b=row.slice(first+1,second).trim();
+  // Strip only the one separator-space emitted by the editor; preserve source dialogue whitespace.
+  const text=row.slice(second+1).replace(/^ /,"");
+  return kind==="history"?{subject:a,basis:b,source:text}:{speaker:a,target:b,text};
  });
 }
 function value(id){return $(id).value}
@@ -231,6 +242,12 @@ $("fork").onclick=()=>guarded(()=>{
 });
 $("undo").onclick=()=>guarded(()=>{if(dirty&&!window.confirm("編集中の内容を破棄して取り消しますか？"))return;
  doc=W.undo(doc);dirty=false;render();fileMessage("直前の編集を取り消しました。");
+});
+$("restoreSource").onclick=()=>guarded(()=>{
+ if(dirty&&!window.confirm("まだ保存していない入力を破棄し、確定セリフだけ元に戻しますか？"))return;
+ if(!window.confirm("このコマのセリフと話者をFACTORY取込時に戻します。元のPWAや他コマには変更しません。続けますか？"))return;
+ doc=W.restoreSourceLines(doc,selected);dirty=false;promptText="";render();
+ fileMessage("話者・セリフを復元しました。目視QAは再確認してください。");
 });
 $("mirror").onclick=()=>reset("mirror");$("himiko").onclick=()=>reset("himiko");
 function reset(project){
