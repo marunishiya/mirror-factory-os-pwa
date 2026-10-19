@@ -129,6 +129,7 @@
       origin:"mirror_factory_os_v09",originalPageId:p.id,
       originalLocked:p.locked===true,sourceLockHash:p.sourceLockHash||null,
       originalSourceLines:p.lines.map(l=>[l[0],l[1]]),
+      speakerBindings:p.lines.map(l=>({literal:l[0],speaker:speaker(l[0])})),
       expectedPanels:panels.map((panel,i)=>({
         id:panel.id,indices:groups[i].indices.slice(),
         lines:panel.lines.map(l=>({speaker:l.speaker,text:l.text}))
