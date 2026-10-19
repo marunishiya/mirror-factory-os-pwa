@@ -50,13 +50,26 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
     <p><a id="imageLab" href="./image-lab.html">画像の部分修正・MASTER参照検査へ →</a></p>
   </section>
   <section>
+    <h2>FACTORY OSから安全に連携</h2>
+    <p class="small">既存の原稿・人物情報を、<strong>読み取り専用の草稿コピー</strong>として取り込みます。MASTER画像や正式Canonの承認は引き継ぎません。</p>
+    <div class="actions"><button type="button" id="factoryScan">この端末のFACTORY OSを読み込む</button></div>
+    <p class="small muted">既存PWAと同じブラウザ・同じHTTPSアドレスでのみ利用できます。データの自動読込や書き戻しは行いません。</p>
+    <label for="factoryBackup" class="file-label">代わりに既存OSのバックアップJSONを選ぶ</label>
+    <input type="file" id="factoryBackup" accept=".json,application/json" aria-label="FACTORY OSバックアップJSON" />
+    <p class="small muted">バックアップは最大32MB。画像データは取り込まず、元のページ原稿のみ使用します。</p>
+    <label for="factoryPages">読み込むページ</label>
+    <select id="factoryPages" class="panel-item" disabled><option value="">まだ読み込まれていません</option></select>
+    <button class="primary" type="button" id="factoryUse" disabled>選択ページを草稿コピーにする</button>
+    <p id="factoryMsg" class="small muted" role="status">既存OSの保存領域は一切書き換えません。</p>
+  </section>
+  <section>
     <h2>ページ・コマ選択</h2>
     <div id="panels"></div>
   </section>
   <section>
     <h2>安全性と制限</h2>
     <p class="small">本ツールは外部API、画像生成、画像認識、端末保存への自動書き込みを行いません。QAは構造化データと人間が登録した確認結果を検査します。画風や同一人物性をAIが見分けた結果ではありません。</p>
-    <p class="small">既存のFACTORY OS、正式MASTER、Cloudflare、SNS投稿には一切接続していません。</p>
+    <p class="small">FACTORY OSからの読み取り専用連携は利用者がボタンを押した場合だけ実行します。書き戻し、MASTER画像の自動転送、Cloudflare・SNSへの接続はありません。</p>
   </section>
 </aside>
 <article>
@@ -92,12 +105,13 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
 </main>
 <footer>検証用の独立画面。正式Canonは必ず別途参照・承認してください。</footer>
 <script src="./engine.js"></script>
+<script src="./factory-bridge.js"></script>
 <script>
 (function(){
 "use strict";
-const W=window.ComicWorkbench;
+const W=window.ComicWorkbench,B=window.ComicFactoryBridge;
 const $=id=>document.getElementById(id);
-let doc=W.demo("mirror"), selected="P01", dirty=false, promptText="";
+let doc=W.demo("mirror"), selected="P01", dirty=false, promptText="",factorySource=null;
 const CHECK_LABELS={
  identity:"顔・体型・服装がMASTERと一致（人が画像を見て確認）",
  bubbleSpeaker:"セリフ・話者・吹き出し尻尾を確認",
@@ -223,6 +237,48 @@ function reset(project){
  if(!window.confirm("現在の内容を破棄して、非Canonデモを読み込みますか？ JSON保存済みか確認してください。"))return;
  doc=W.demo(project);selected=doc.pages[0].panels[0].id;dirty=false;promptText="";render();fileMessage("非Canonデモを読み込みました。");
 }
+function factoryMessage(m,bad=false){
+ const out=$("factoryMsg");out.textContent=m;out.className=bad?"small error":"small good";
+}
+function offerFactoryState(value){
+ const next=B.extract(value),rows=B.listPages(next);
+ if(!rows.length)throw Error("原稿ページが見つかりません");
+ factorySource=next;
+ const select=$("factoryPages");select.replaceChildren();
+ for(const p of rows){
+   const opt=document.createElement("option");opt.value=p.id;
+   opt.textContent=p.label+" ／ "+(p.panels?p.panels+"コマ":"コマ割り未登録");select.append(opt);
+ }
+ select.value=rows.some(p=>p.id===next.selectedPage)?next.selectedPage:rows[0].id;
+ select.disabled=false;$("factoryUse").disabled=false;
+ factoryMessage("読み取り対象を取得しました（"+rows.length+"ページ）。取り込むページを選んでください。");
+}
+$("factoryScan").onclick=()=>guarded(()=>{
+ try{offerFactoryState(B.fromStorage(window.localStorage))}
+ catch(e){factoryMessage(e.message,true)}
+});
+$("factoryBackup").addEventListener("change",async event=>{
+ const file=event.target.files?.[0];event.target.value="";
+ if(!file)return;
+ try{
+  if(file.size<1||file.size>32*1024*1024)throw Error("JSONは32MB以内にしてください。大きな画像付きバックアップは同一ブラウザの連携をご利用ください");
+  offerFactoryState(await file.text());
+ }catch(e){factoryMessage("読込失敗: "+e.message,true)}
+});
+$("factoryUse").onclick=()=>guarded(()=>{
+ if(!factorySource)throw Error("まず保存データまたはバックアップを読み込んでください");
+ const converted=B.convert(factorySource,$("factoryPages").value);
+ W.assertDocument(converted);
+ const lineCount=converted.pages[0].panels.reduce((n,p)=>n+p.lines.length,0);
+ if(!window.confirm("既存データは一切変更せず、このラボの作業データを「"+
+   converted.title+"」の草稿に置き換えます。"+lineCount+
+   "行を取り込みます。ラボ側で保存していない作業は失われます。続けますか？"))return;
+ doc=converted;selected=doc.pages[0].panels[0].id;dirty=false;promptText="";
+ render();
+ const warnings=converted.importWarnings||[];
+ factoryMessage("草稿コピーを作成しました。元のFACTORY OSは変更していません。"+
+   (warnings.length?" 注意："+warnings.join("／"):" 本体の正式MASTERと目視QAは別途必要です。"));
+});
 $("prompt").onclick=()=>guarded(()=>{
  if(dirty){fileMessage("未保存の入力があります。保存してから指示書を作ってください。",true);return}
  promptText=W.promptFor(doc,selected);$("promptText").textContent=promptText;
