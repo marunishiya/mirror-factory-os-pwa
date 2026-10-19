@@ -117,3 +117,14 @@ test("プロンプトに他コマ保護と考証区分が記載される", () =>
   assert.match(W.promptFor(W.demo("mirror"),"P01"),/承認済み他コマは一切変更しない/);
   assert.match(W.promptFor(W.demo("himiko"),"H01"),/reconstruction/);
 });
+
+
+test("スマホ画面のインラインJavaScriptが構文エラーなしで解析できる", () => {
+  const fs = require("node:fs");
+  const vm = require("node:vm");
+  const html = fs.readFileSync(require("node:path").join(__dirname,"index.html"),"utf8");
+  const blocks = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+    .map(m=>m[1]).filter(Boolean);
+  assert(blocks.length>0);
+  for (const code of blocks) assert.doesNotThrow(()=>new vm.Script(code));
+});
