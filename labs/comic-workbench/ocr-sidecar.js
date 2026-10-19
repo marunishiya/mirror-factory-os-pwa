@@ -3,7 +3,7 @@
  "use strict";
  const api=factory();
  if(typeof module==="object"&&module.exports)module.exports=api;
- root.ComicOcrSidecar=factory();
+ root.ComicOcrSidecar=api;
 })(typeof globalThis==="object"?globalThis:this,function(){
  "use strict";
  const SCHEMA="comic-ocr-candidates/v1", HASH=/^[a-f0-9]{64}$/;
@@ -12,7 +12,8 @@
  function load(raw,meta){
   if(typeof raw!=="string"||raw.length>1000000)reject("OCR候補ファイルが大きすぎるか不正です");
   const p=JSON.parse(raw);
-  if(!p||p.schema!==SCHEMA||!p.image||!meta||!HASH.test(p.image.sha256||"")||
+  if(!p||p.schema!==SCHEMA)reject("OCR候補の形式が不正です");
+  if(!p.image||!meta||!HASH.test(p.image.sha256||"")||
      !HASH.test(meta.sha256||"")||p.image.sha256!==meta.sha256||
      p.image.width!==meta.width||p.image.height!==meta.height||
      p.image.bytes!==meta.bytes){
