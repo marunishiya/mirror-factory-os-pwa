@@ -110,3 +110,18 @@ test("ブラウザHTMLのJS構文と入口／ダウンロード導線",()=>{
  for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
    if(m[1].trim())assert.doesNotThrow(()=>new vm.Script(m[1]));
 });
+
+test("悪意ある入力が視覚AI認証を偽装してもレポートは必ずfalse",()=>{
+ const d=fixture(),value=Q.evaluate(d,"P01",ready(d),meta);
+ value.ocrPerformed=true;
+ value.imageAnalyzedByAI=true;
+ value.visualImageVerified=true;
+ value.canonApproved=true;
+ value.imageBytes="secret-image-bytes";
+ const json=Q.safeReport(value),clean=JSON.parse(json);
+ assert.equal(clean.ocrPerformed,false);
+ assert.equal(clean.imageAnalyzedByAI,false);
+ assert.equal(clean.visualImageVerified,false);
+ assert.equal(clean.canonApproved,false);
+ assert(!json.includes("secret-image-bytes"));
+});
