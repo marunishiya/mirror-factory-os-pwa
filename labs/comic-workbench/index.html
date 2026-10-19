@@ -131,7 +131,7 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
 "use strict";
 const W=window.ComicWorkbench,B=window.ComicFactoryBridge,C=window.ComicDialogueCodec,V=window.ComicDraftVault;
 const $=id=>document.getElementById(id);
-let doc=W.demo("mirror"), selected="P01", dirty=false, promptText="",factorySource=null;
+let doc=W.demo("mirror"), selected="P01", dirty=false, promptText="",factorySource=null,needsExport=false;
 function refreshVault(statusMessage){
  try{
   const state=V.inspect(window.localStorage,W.assertDocument);
@@ -154,6 +154,7 @@ function refreshVault(statusMessage){
  }
 }
 function checkpoint(){
+ needsExport=true;
  try{
   const r=V.save(window.localStorage,doc,selected,W.assertDocument);
   refreshVault(r.saved?"端末内に草稿を記録しました":"復旧保存は無効です");
@@ -167,14 +168,16 @@ function loadVaultSlot(slot){
   if(dirty&&!window.confirm("未保存の入力は復元できません。破棄しますか？"))return;
   const checkpoint=V.restore(window.localStorage,slot,W.assertDocument);
   if(!window.confirm("草稿「"+checkpoint.doc.title+"」を復元して、現在のラボ作業を置き換えますか？ 元のFACTORY OSには書き戻しません。"))return;
-  doc=checkpoint.doc;selected=checkpoint.selected;dirty=false;promptText="";render();
+  doc=checkpoint.doc;selected=checkpoint.selected;dirty=false;needsExport=true;promptText="";render();
   refreshVault("草稿を復元しました。正式Canonの承認にはなりません。");
  }catch(e){refreshVault("復元できません："+e.message)}
 }
 $("vaultEnable").onclick=()=>{
  if(!window.confirm("この端末のブラウザ保存領域に、作品の文章・原稿を暗号化せず保存します。共有端末では推奨しません。有効にしますか？"))return;
- try{V.setEnabled(window.localStorage,true);checkpoint()}
- catch(e){refreshVault("保存を有効にできません："+e.message)}
+ try{
+  V.setEnabled(window.localStorage,true);
+  refreshVault("端末内の復旧保存を有効にしました。次にコマを保存した時から記録します。以前の復旧データはそのままです。");
+ }catch(e){refreshVault("保存を有効にできません："+e.message)}
 };
 $("vaultDisable").onclick=()=>{
  try{V.setEnabled(window.localStorage,false);refreshVault("今後の自動保存を停止しました。保存済みの復旧データは残ります。")}
@@ -384,6 +387,7 @@ $("export").onclick=()=>guarded(()=>{
  const url=URL.createObjectURL(blob),a=document.createElement("a");
  a.href=url;a.download="comic-workbench-"+doc.project+"-"+new Date().toISOString().slice(0,10)+".json";
  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ needsExport=false;
  fileMessage("JSONを書き出しました。端末のダウンロード先を確認してください。");
 });
 $("import").addEventListener("change",async e=>{
@@ -398,7 +402,11 @@ $("import").addEventListener("change",async e=>{
   dirty=false;promptText="";render();checkpoint();fileMessage("JSONを読み込みました。正式Canonの真偽は別途確認してください。");
  }catch(err){fileMessage("読込失敗: "+err.message,true)}
 });
-window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
+window.addEventListener("beforeunload",e=>{
+ let localRecovery=false;
+ try{localRecovery=V.enabled(window.localStorage)}catch(_){}
+ if(dirty||(needsExport&&!localRecovery)){e.preventDefault();e.returnValue=""}
+});
 render();refreshVault();
 })();
 </script>
