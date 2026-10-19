@@ -47,6 +47,7 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
       <label for="import" class="file-label" style="margin:0">JSON読込</label>
       <input class="hidden" id="import" type="file" accept="application/json,.json"></div>
     <p id="context" class="small muted"></p>
+    <p><a id="imageLab" href="./image-lab.html">画像の部分修正・MASTER参照検査へ →</a></p>
   </section>
   <section>
     <h2>ページ・コマ選択</h2>
@@ -126,6 +127,7 @@ function render(){
  W.assertDocument(doc);
  const p=active();if(!p)throw Error("選択コマが見つかりません");
  $("context").textContent=doc.title+" / "+allPanels().length+"コマ / 履歴"+(doc.audit||[]).length+"件";
+ $("imageLab").href="./image-lab.html?project="+encodeURIComponent(doc.project)+"&panel="+encodeURIComponent(selected);
  $("authority").textContent="MASTER参照（デモ用の文字情報のみ・実物は読み込んでいません）: "+doc.canon.reference;
  $("activeTitle").textContent=p.id+" — "+(p.status==="approved"?"承認済み／編集禁止":"草稿")+" / revision "+p.revision;
  $("lock").textContent=p.status==="approved"?"承認済みコマです。修正するには複製して新規草稿を作ります。":"選択コマ以外は変更しません。目視確認は人が実際の画像を見て実施してください。";
