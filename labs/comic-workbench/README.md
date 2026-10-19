@@ -301,3 +301,21 @@ AIによる描画、異なるポーズの顔一致判定、ユーザー承認の
 ### 商用化の判定
 
 この機能の実装だけでは、`COMMERCIAL_READINESS.md`の「自動画像認識QA」は合格にできません。人の負担削減・操作性を別途テストし、誤ったPASSを出さないための境界を確認します。
+
+
+## v0.10 — 試験的な「端末のOCR候補」提案（販売用OCRではない）
+
+**差分**： `native-ocr.js` と `native-ocr.test.cjs` を追加し、`balloon-lab.html` に「この画像の文字候補を検出する」ボタンを導入。
+
+- **ユーザーの明示クリック時のみ**、ブラウザ標準の試験的な `TextDetector` が存在する場合に限って、画像内の文字列と矩形を候補として表示する。第三者CDN、APIキー、OCR学習済みモデルや画像の外部アップロード機能は**本実装には含めていない**。標準API自体のサポート／裏側の実装・プライバシーはOS/ブラウザ依存。
+- **未対応ブラウザ**では無理にAPIを呼ばず、従来の手動転記を続ける。APIがあっても初期化失敗・認識できない・プラットフォーム非対応の場合は安全に手動入力に戻す。
+- OCR候補を「どの吹き出しの転記欄へコピーするか」はユーザーが選択し、別途確認した場合だけ入力する。**コピーした時点で目視チェックは必ず未完了**に戻る。既存の固定原稿・Canon・QA合否は変更しない。
+- 検査対象画像やコマを切り替えた場合、OCR候補・古い非同期認識結果を捨てる。注釈レポートの `ocrPerformed` / `visualImageVerified` / `canonApproved` は従来どおり false に固定（レポートの取得・検査は人手注釈に基づくため）。
+- **大きな制限**：Chrome標準の TextDetector は安定した全ブラウザ対応OCRではなく、初期状態で無効な端末も多い。日本語や縦書きで十分な精度があることは未確認。候補の読み取りだけを理由に販売向け自動OCRゲートは合格にしない。
+- 将来の本格OCRの候補は Tesseract.js（Apache-2.0）だが、`traineddata`やWebAssemblyのサイズ・依存パッケージ・日本語縦書き精度・利用規約・安全性・端末メモリ・初期ダウンロード量まで検証した後に採否を決める。**現時点でTesseract.jsは未インストール・未導入**。
+
+資料：
+- Google Chrome for Developers, Shape Detection API： https://developer.chrome.com/docs/capabilities/shape-detection
+- Tesseract.js（Apache-2.0）：https://github.com/naptha/tesseract.js
+
+販売前の検証に**OCR認識器の日本語文字正解率、誤検出率、縦書き・小さい吹き出しでの実測**を追加する。現行のCLI/Node単体テストはTextDetectorを模擬したもので、実機OCR性能の証明にはならない。
