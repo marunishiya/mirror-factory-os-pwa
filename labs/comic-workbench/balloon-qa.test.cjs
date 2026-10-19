@@ -125,3 +125,11 @@ test("悪意ある入力が視覚AI認証を偽装してもレポートは必ず
  assert.equal(clean.canonApproved,false);
  assert(!json.includes("secret-image-bytes"));
 });
+
+test("スマホ画像ズームの切替・端末内原本再選択の安全策が存在",()=>{
+ const html=fs.readFileSync(path.join(__dirname,"balloon-lab.html"),"utf8");
+ assert(html.includes('id="zoom"'));
+ assert(html.includes('value="1"')&&html.includes('value="2"')&&html.includes('value="3"'));
+ assert(html.includes('overflow-x:auto'));
+ assert(html.includes('$("imageFile").value=""'));
+});
