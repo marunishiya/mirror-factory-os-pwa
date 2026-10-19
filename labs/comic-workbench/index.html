@@ -28,7 +28,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10192a;border:1px sol
 .issue{border-left:3px solid #f6ba60;padding:8px 12px;margin:8px 0;background:#283044;border-radius:6px}
 .issue[data-level="ERROR"]{border-left-color:#ff8197}
 footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{display:none}
-@media(max-width:720px){main{display:block}aside,article{display:grid;gap:14px;margin-bottom:14px}.grid2{grid-template-columns:1fr}}
+@media(max-width:720px){main{display:block}aside,article{display:grid;gap:14px;margin-bottom:14px}.grid2{grid-template-columns:1fr}.small{font-size:.94rem;line-height:1.7}label{font-size:1rem}button,.file-label{min-height:48px;font-size:1rem}section,.panel{padding:18px}textarea{min-height:100px}.panel-item{min-height:50px}}
 </style>
 </head>
 <body>
@@ -47,6 +47,7 @@ footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{dis
       <label for="import" class="file-label" style="margin:0">JSON読込</label>
       <input class="hidden" id="import" type="file" accept="application/json,.json"></div>
     <p id="context" class="small muted"></p>
+    <p class="small"><a href="#activeTitle">編集中のコマ・QA画面へ移動 ↓</a></p>
     <p><a id="imageLab" href="./image-lab.html">画像の部分修正・MASTER参照検査へ →</a></p>
   </section>
   <section>
@@ -370,6 +371,7 @@ $("factoryUse").onclick=()=>guarded(()=>{
    "行を取り込みます。ラボ側で保存していない作業は失われます。続けますか？"))return;
  doc=converted;selected=doc.pages[0].panels[0].id;dirty=false;promptText="";
  render();checkpoint();
+ $("activeTitle").scrollIntoView({behavior:"smooth",block:"start"});
  const warnings=converted.importWarnings||[];
  factoryMessage("草稿コピーを作成しました。元のFACTORY OSは変更していません。"+
    (warnings.length?" 注意："+warnings.join("／"):" 本体の正式MASTERと目視QAは別途必要です。"));
