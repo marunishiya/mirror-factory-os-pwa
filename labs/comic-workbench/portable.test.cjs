@@ -24,21 +24,27 @@ test("sha256 rejects unsupported input",async()=>{
   assert.throws(()=>hash.pure("abc"),/Uint8Array/);
   await assert.rejects(()=>hash.sha256("abc"),/入力形式/);
 });
-test("Portable builder packages both linked HTML files with embedded scripts",()=>{
+test("Portable builder packages all three self-contained HTML files with embedded scripts",()=>{
   const exec=require("node:child_process").execFileSync;
   const result=JSON.parse(exec(process.execPath,[path.join(__dirname,"build-portable.cjs")],{encoding:"utf8"}));
   const out=path.join(__dirname,"portable-dist");
   assert(result.files.includes("index.html"));
   assert(result.files.includes("image-lab.html"));
+  assert(result.files.includes("balloon-lab.html"));
   assert(result.files.includes("使い方.txt"));
   const index=fs.readFileSync(path.join(out,"index.html"),"utf8");
   const image=fs.readFileSync(path.join(out,"image-lab.html"),"utf8");
+  const balloon=fs.readFileSync(path.join(out,"balloon-lab.html"),"utf8");
   assert(index.includes("ComicWorkbench"));
   for(const ref of ["ComicImageQA","ComicAuthority","ComicHash"]){
     assert(image.includes(ref),ref+" is not bundled");
   }
-  assert(!/<script\s+src=/.test(index+image));
+  assert(!/<script\s+src=/.test(index+image+balloon));
+  assert(balloon.includes("ComicBalloonQA"));
+  assert(balloon.includes('id="demo"'));
+  assert(balloon.includes('id="imgCanvas"'));
   assert(image.includes('id="sample"'));
   assert(image.includes('id="compose"'));
   assert(index.includes('href="./image-lab.html'));
+  assert(index.includes('href="./balloon-lab.html'));
 });
