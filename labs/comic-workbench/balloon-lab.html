@@ -50,7 +50,9 @@ code{overflow-wrap:anywhere}button:focus-visible,select:focus-visible,textarea:f
 </section>
 <section><h2>③ 試験的なOCR候補（任意）</h2>
 <p class="small">ブラウザがTextDetectorを提供する場合だけ使用できます。日本語や縦書きへの対応、文字認識の精度は保証されません。自動PASSにはしません。</p>
-<button id="ocrTry" type="button" disabled>この画像の文字候補を検出する</button>
+<button id="ocrTry" type="button" disabled>この画像の文字候補を検出する（対応端末のみ）</button>
+<p class="small">PCのTesseractから生成したOCR候補JSONも読み込めます。画像のSHA-256が一致した場合だけ受け付け、画像・原稿・MASTERを書き換えません。</p>
+<label>PCで作ったOCR候補JSON <input id="ocrFile" type="file" accept=".json,application/json"></label>
 <p id="ocrStatus" class="notice" role="status">利用可能か確認中です。</p>
 <div id="ocrCandidates"></div>
 </section>
@@ -67,11 +69,11 @@ code{overflow-wrap:anywhere}button:focus-visible,select:focus-visible,textarea:f
 <p class="small"><strong>重要：</strong>これは人が入力した吹き出し情報と確定原稿の一致検査です。一部ブラウザのみOCR候補の試験取得ができます。AIの顔検査、吹き出し・尻尾の自動認識は未実装です。「注釈の内容が一致」しても実画像を機械が検証したことにはならず、正式Canonの承認や販売用の最終PASSにはしません。</p>
 </section>
 </main>
-<script src="./engine.js"></script><script src="./sha256.js"></script><script src="./balloon-qa.js"></script><script src="./native-ocr.js"></script>
+<script src="./engine.js"></script><script src="./sha256.js"></script><script src="./balloon-qa.js"></script><script src="./native-ocr.js"></script><script src="./ocr-sidecar.js"></script>
 <script>
 (function(){
 "use strict";
-const W=window.ComicWorkbench,H=window.ComicHash,Q=window.ComicBalloonQA,O=window.ComicNativeOcr,$=id=>document.getElementById(id);
+const W=window.ComicWorkbench,H=window.ComicHash,Q=window.ComicBalloonQA,O=window.ComicNativeOcr,S=window.ComicOcrSidecar,$=id=>document.getElementById(id);
 let doc=null,panelId="",image=null,annotations=[],current=0,lastReport=null,ocrToken=0;
 const canvas=$("imgCanvas"),ctx=canvas.getContext("2d");
 function status(id,msg,kind){
@@ -86,6 +88,35 @@ function resetOcr(){
  $("ocrStatus").textContent=cap.available?
    (image?"OCRを利用できます。ボタンを押すまで処理しません。":"画像を選ぶと利用できます。"):cap.reason;
 }
+function showCandidates(result,sourceName){
+ const area=$("ocrCandidates");area.replaceChildren();
+ $("ocrStatus").textContent=result.note||"OCR候補はありません。手動転記してください。";
+ if(result.status!=="CANDIDATES")return;
+ const candidates=result.detections.filter(x=>x.recognized);
+ $("ocrStatus").textContent=sourceName+"の文字候補 "+candidates.length+"件。必ず画像と照合してください。";
+ for(const cand of candidates){
+   const block=document.createElement("div");block.className="annotation";
+   const p=document.createElement("p");p.textContent="候補："+cand.text;
+   block.append(p);
+   const select=document.createElement("select");
+   for(let n=0;n<annotations.length;n++){
+     const opt=document.createElement("option");opt.value=String(n);
+     opt.textContent=(n+1)+"番の吹き出し";select.append(opt);
+   }
+   block.append(select);
+   const btn=document.createElement("button");btn.type="button";
+   btn.textContent="選択した転記欄へ候補をコピー";
+   btn.onclick=()=>{
+     const n=Number(select.value);
+     if(!annotations[n]||!window.confirm("画像と照合してください。OCR候補を"+(n+1)+"番に転記しますか？"))return;
+     annotations[n].observedText=cand.text;
+     annotations[n].humanChecked=false;
+     clearResult();renderAnnotations();
+     $("ocrStatus").textContent="候補を転記しました。目視確認チェックは未完了です。";
+   };
+   block.append(btn);area.append(block);
+ }
+}
 $("ocrTry").onclick=async()=>{
  if(!image)return;
  const token=++ocrToken,bitmap=image.bitmap;
@@ -93,38 +124,29 @@ $("ocrTry").onclick=async()=>{
  try{
    const result=await O.recognize(bitmap,window);
    if(token!==ocrToken||!image||bitmap!==image.bitmap)return;
-   const area=$("ocrCandidates");area.replaceChildren();
-   $("ocrStatus").textContent=result.note;
-   if(result.status!=="CANDIDATES")return;
-   const candidates=result.detections.filter(x=>x.recognized);
-   $("ocrStatus").textContent="試験的なOCR候補 "+candidates.length+"件。必ず画像と照合してください。";
-   for(const cand of candidates){
-     const block=document.createElement("div");block.className="annotation";
-     const p=document.createElement("p");p.textContent="OCR候補："+cand.text;block.append(p);
-     const select=document.createElement("select");
-     for(let n=0;n<annotations.length;n++){
-       const opt=document.createElement("option");opt.value=String(n);
-       opt.textContent=(n+1)+"番の吹き出し";select.append(opt);
-     }
-     block.append(select);
-     const btn=document.createElement("button");btn.type="button";
-     btn.textContent="選択した転記欄へ候補をコピー";
-     btn.onclick=()=>{
-       const n=Number(select.value);
-       if(!annotations[n]||!window.confirm("画像と照合してください。OCR候補を"+(n+1)+"番に転記しますか？"))return;
-       annotations[n].observedText=cand.text;
-       annotations[n].humanChecked=false;
-       clearResult();renderAnnotations();
-       $("ocrStatus").textContent="候補を転記しました。目視確認チェックは未完了です。";
-     };
-     block.append(btn);area.append(block);
-   }
+   showCandidates(result,"ブラウザ試験OCR");
  }catch(e){
    if(token===ocrToken)$("ocrStatus").textContent="OCR実行失敗："+e.message+"。手動転記してください。";
  }finally{
    if(token===ocrToken)$("ocrTry").disabled=!O.availability(window).available||!image;
  }
 };
+$("ocrFile").addEventListener("change",async e=>{
+ const file=e.target.files?.[0];e.target.value="";if(!file)return;
+ const token=++ocrToken,expected=image;
+ $("ocrCandidates").replaceChildren();
+ try{
+  if(!expected)throw Error("先に対応する原本画像を選んでください");
+  if(file.size<1||file.size>1024*1024)throw Error("OCR候補JSONは1MB以内です");
+  const contents=await file.text();
+  if(token!==ocrToken||expected!==image)return;
+  const data=S.load(contents,{sha256:image.sha256,width:image.width,
+    height:image.height,bytes:image.bytes});
+  showCandidates(data,"PC実OCR");
+ }catch(err){
+  if(token===ocrToken)$("ocrStatus").textContent="OCR候補の読み込みを拒否："+err.message;
+ }
+});
 function getPanel(){return doc?.pages.flatMap(pg=>pg.panels).find(p=>p.id===panelId)}
 function draw(){
  canvas.style.width=(100*Number($("zoom").value||1))+"%";
