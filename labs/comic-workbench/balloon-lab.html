@@ -18,7 +18,7 @@ label{display:block;margin:9px 0 5px}select{max-width:100%}
 input[type=checkbox]{width:22px;height:22px;accent-color:#7bc7ff}
 .notice{border-left:4px solid #7baee4;background:#26364f;padding:10px 12px;border-radius:7px;white-space:pre-wrap}
 .error{border-left-color:#ff899b;color:#ffd2dc}.success{border-left-color:#7ce5b4;color:#cbffde}
-#canvasWrap{position:relative;max-width:900px;margin:auto}
+#canvasWrap{position:relative;max-width:900px;margin:auto;overflow-x:auto;overflow-y:hidden}
 #imgCanvas{display:block;width:100%;height:auto;max-height:none;object-fit:fill;touch-action:manipulation;border:2px solid #6b8eaf;background:#111d2b;border-radius:10px}
 #annotationList{display:grid;gap:10px}
 .annotation{padding:13px;border-radius:11px;border:1px solid #526681;background:#22324b}
@@ -44,6 +44,7 @@ code{overflow-wrap:anywhere}button:focus-visible,select:focus-visible,textarea:f
 <section><h2>② 対象のコマ画像を選ぶ</h2>
 <label>PNG / JPEG / WebP（10MB・400万画素まで）<input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
 <p id="imageState" class="small">画像は端末内でのみ読み込み、外部へ送信しません。</p>
+<div class="row"><label for="zoom">画像の拡大率　<select id="zoom"><option value="1">100%（全体）</option><option value="2">200%（細部確認）</option><option value="3">300%（文字確認）</option></select></label></div>
 <div id="canvasWrap"><canvas id="imgCanvas" width="900" height="540" aria-label="コマ画像。吹き出しの中心をタップして位置を登録"></canvas></div>
 <p class="small">下で「何番の吹き出しを登録するか」を選んでから、上の画像にある吹き出しの中心をタップしてください。タップ位置は番号付きで表示されます。</p>
 </section>
@@ -73,6 +74,7 @@ function status(id,msg,kind){
 function clearResult(){lastReport=null;$("report").disabled=true;status("result","入力が変更されました。再検査してください。");$("issues").replaceChildren()}
 function getPanel(){return doc?.pages.flatMap(pg=>pg.panels).find(p=>p.id===panelId)}
 function draw(){
+ canvas.style.width=(100*Number($("zoom").value||1))+"%";
  ctx.clearRect(0,0,canvas.width,canvas.height);
  ctx.fillStyle="#17283f";ctx.fillRect(0,0,canvas.width,canvas.height);
  if(image){
@@ -122,7 +124,7 @@ function takeDoc(next){
  valid.forEach(p=>{const opt=document.createElement("option");opt.value=p.id;opt.textContent=p.id+"（"+p.lines.length+"件）";sel.append(opt)});
  sel.disabled=false;panelId=sel.value;
  annotations=Q.newAnnotations(doc,panelId);current=0;image?.bitmap?.close?.();image=null;
- canvas.width=900;canvas.height=540;clearResult();updateSource();renderAnnotations();draw();
+ canvas.width=900;canvas.height=540;$("imageFile").value="";clearResult();updateSource();renderAnnotations();draw();
  status("imageState","このコマの画像を選んでください。別のコマの画像・注釈は引き継ぎません。");
 }
 function renderAnnotations(){
@@ -171,10 +173,11 @@ canvas.addEventListener("click",e=>{
  if(current<annotations.length-1)current++;
  clearResult();renderAnnotations();draw();
 });
+$("zoom").addEventListener("change",draw);
 $("panel").addEventListener("change",()=>{
  if(!doc)return;panelId=$("panel").value;
  annotations=Q.newAnnotations(doc,panelId);current=0;
- image?.bitmap?.close?.();image=null;canvas.width=900;canvas.height=540;
+ image?.bitmap?.close?.();image=null;$("imageFile").value="";canvas.width=900;canvas.height=540;
  clearResult();updateSource();renderAnnotations();draw();
  status("imageState","コマを切り替えました。対応する画像を選び直してください。");
 });
