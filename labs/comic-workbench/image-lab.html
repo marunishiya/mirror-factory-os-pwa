@@ -111,6 +111,7 @@ pre{white-space:pre-wrap;word-break:break-word;padding:12px;background:#101929;b
 <footer>試験版：画素差分がPASSでも、人物の同一性や完成作品のCanon合格を意味しません。</footer>
 <script src="./image-qa.js"></script>
 <script src="./authority.js"></script>
+<script src="./sha256.js"></script>
 <script>
 (function(){
 "use strict";
@@ -179,7 +180,6 @@ async function readFile(file){
  if(!file)throw Error("ファイルが選択されていません");
  if(!["image/png","image/jpeg","image/webp"].includes(file.type))throw Error("対応外の画像形式です");
  if(file.size<=0||file.size>MAX_FILE)throw Error("ファイルは10MB以内にしてください");
- if(!window.crypto?.subtle)throw Error("SHA-256が利用できません。HTTPSの安全な接続で開いてください");
  if(!window.createImageBitmap)throw Error("このブラウザは画像デコードに対応していません");
  const bitmap=await createImageBitmap(file);
  try {
@@ -187,8 +187,7 @@ async function readFile(file){
      throw Error("画像は400万画素以内にしてください");
    }
    const data=await file.arrayBuffer();
-   const digest=await crypto.subtle.digest("SHA-256",data);
-   const sha256=[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");
+   const sha256=await window.ComicHash.sha256(data);
    return {bitmap,width:bitmap.width,height:bitmap.height,bytes:file.size,name:file.name,sha256};
  }catch(e){bitmap.close();throw e}
 }
@@ -326,8 +325,7 @@ $("compose").onclick=async()=>{
   ctx.putImageData(new ImageData(merged,a.width,a.height),0,0);
   const blob=await new Promise((resolve,reject)=>can.toBlob(x=>x?resolve(x):
     reject(Error("PNG生成に失敗しました")),"image/png"));
-  const hash=await crypto.subtle.digest("SHA-256",await blob.arrayBuffer());
-  const sha=[...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  const sha=await window.ComicHash.sha256(await blob.arrayBuffer());
   const safe=$("panelId").value.trim().replace(/[^0-9a-zA-Z_-]/g,"_").slice(0,70)||"panel";
   const filename="local-composite-"+$("project").value+"-"+safe+".png";
   compositeRecord={filename,sha256:sha,width:a.width,height:a.height,
