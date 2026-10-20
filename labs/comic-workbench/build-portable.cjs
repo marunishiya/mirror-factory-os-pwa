@@ -1,4 +1,4 @@
-/* Makes two dependency-free HTML files for offline Chrome/Android use.
+/* Makes dependency-free HTML files for offline Chrome/Android use.
  * Original lab/source unchanged. No deploy, image, credential or external API. */
 "use strict";
 const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
@@ -25,15 +25,16 @@ function inlined(name){
  fs.writeFileSync(path.join(out,name),ret,"utf8");
  return ret;
 }
-const index=inlined("index.html"),image=inlined("image-lab.html"),balloon=inlined("balloon-lab.html");
+const index=inlined("index.html"),image=inlined("image-lab.html"),balloon=inlined("balloon-lab.html"),preflight=inlined("shot-preflight.html");
 if(!index.includes("ComicWorkbench")||!image.includes("ComicImageQA")||
  !image.includes("ComicAuthority")||!image.includes("ComicHash")||
- !balloon.includes("ComicBalloonQA"))throw Error("Missing bundled API");
+ !balloon.includes("ComicBalloonQA")||!preflight.includes("ComicShotPreflight"))throw Error("Missing bundled API");
 fs.copyFileSync(path.join(root,"ocr_sidecar.py"),path.join(out,"ocr_sidecar.py"));
 const guide=[
-"Comic Workbench OFFLINE v0.12",
+"Comic Workbench OFFLINE v0.13",
 "",
-"スマホ用：index.html、image-lab.html、balloon-lab.htmlの3つのHTMLをChrome等で開いてください。",
+"スマホ用：index.html、image-lab.html、balloon-lab.html、shot-preflight.htmlの4つのHTMLをChrome等で開いてください。",
+"独立原画検査：shot-preflight.htmlで生成絵を選択→ポスター罫線・最低解像度の疑い→目視確認→QA用JSON保存。",
 "吹き出しQA：原稿JSON→コマ画像→吹き出しをタップ→話者・文字を目視で入力→注釈の照合→JSON保存。",
 "実OCR（PC専用・任意）：Tesseract（jpn/jpn_vert）を別途ローカルに導入したPCで、python3 ocr_sidecar.py --image panel.png --output ocr-result.json --lang jpn を実行。生成JSONと同じPNGをballoon-lab.htmlで読み込むとOCR候補を表示。",
 // Tesseract CLI is NOT bundled. Images and Canon remain local; use user-provided data only.
@@ -47,4 +48,4 @@ const guide=[
 ].join("\n");
 fs.writeFileSync(path.join(out,"使い方.txt"),guide+"\n","utf8");
 console.log(JSON.stringify({output:out,files:fs.readdirSync(out),scripts:[...included],bytes:{
- index:Buffer.byteLength(index),image:Buffer.byteLength(image),balloon:Buffer.byteLength(balloon)}}));
+ index:Buffer.byteLength(index),image:Buffer.byteLength(image),balloon:Buffer.byteLength(balloon),preflight:Buffer.byteLength(preflight)}}));
