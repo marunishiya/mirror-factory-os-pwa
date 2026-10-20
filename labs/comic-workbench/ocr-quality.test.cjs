@@ -60,3 +60,14 @@ test("JSON結果に悪意あるCanon承認属性があっても強制false",()=>
  assert.equal(obj.canonApproved,false);assert.equal(obj.modelValidated,false);
  assert.equal(obj.imageAutomaticallyVerified,false);
 });
+const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+test("配布HTMLにOCRの文字誤り率とJSONダウンロード導線がある",()=>{
+ const h=fs.readFileSync(path.join(__dirname,"balloon-lab.html"),"utf8");
+ for(const item of ['id="measureOcr"','id="exportOcrMeasure"',
+  'id="qualityStatus"','./ocr-quality.js','T.assess(pairs']){
+   assert(h.includes(item),item);
+ }
+ for(const match of h.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)){
+  if(match[1].trim())assert.doesNotThrow(()=>new vm.Script(match[1]));
+ }
+});
