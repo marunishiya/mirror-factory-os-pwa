@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Comic Workbench | 制作・検査 実験室</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#eff3fb;background:#101524}
+*{box-sizing:border-box}body{margin:0}header{background:#1a2235;border-bottom:1px solid #374257;padding:18px max(16px,calc((100vw - 1200px)/2))}
+h1{font-size:1.25rem;margin:4px 0}h2{font-size:1.05rem;margin:0 0 12px}p{line-height:1.65;margin:6px 0}
+small,.muted{color:#adbad0}main{max-width:1200px;margin:auto;padding:16px;display:grid;gap:16px;grid-template-columns:minmax(245px,1fr) minmax(320px,2fr)}
+section,.panel{background:#1a2235;border:1px solid #374257;border-radius:14px;padding:16px}aside{display:grid;gap:16px;align-content:start}
+button,.file-label{font:inherit;cursor:pointer;background:#303e58;color:#fff;border:1px solid #667795;border-radius:9px;padding:10px 12px;min-height:42px}
+button:hover,.file-label:hover{background:#405375}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #8ebafb;outline-offset:2px}
+button.primary{background:#205b9f;border-color:#5393d6}button.danger{border-color:#8b4a58}button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:8px}.small{font-size:.85rem}button.current{border:2px solid #89bfff;background:#294c78}
+.panel-item{display:block;width:100%;text-align:left;margin:6px 0}
+.pill{display:inline-block;background:#33435a;color:#c6defa;border-radius:100px;padding:3px 9px;font-size:.78rem}
+.notice{background:#263249;border-left:3px solid #86aaf6;padding:10px 12px;border-radius:6px}
+.warning{color:#ffdfa6}.error{color:#ffb6be}.good{color:#a9e9c3}
+label{display:block;font-weight:600;margin:12px 0 4px;font-size:.9rem}
+input[type=text],textarea{width:100%;background:#0d1422;color:#fff;border:1px solid #67758a;border-radius:8px;font:inherit;padding:10px;line-height:1.5}
+textarea{min-height:76px;resize:vertical}input[type=checkbox]{width:18px;height:18px;accent-color:#73b3ff}
+.check-row{display:flex;gap:10px;align-items:center;margin:8px 0;font-weight:400}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.full{grid-column:1/-1}
+pre{white-space:pre-wrap;word-break:break-word;background:#10192a;border:1px solid #384963;border-radius:8px;padding:12px;font-size:.83rem}
+.issue{border-left:3px solid #f6ba60;padding:8px 12px;margin:8px 0;background:#283044;border-radius:6px}
+.issue[data-level="ERROR"]{border-left-color:#ff8197}
+footer{padding:16px;text-align:center;color:#aab7cd;font-size:.82rem}.hidden{display:none}
+@media(max-width:720px){main{display:block}aside,article{display:grid;gap:14px;margin-bottom:14px}.grid2{grid-template-columns:1fr}.small{font-size:.94rem;line-height:1.7}label{font-size:1rem}button,.file-label{min-height:48px;font-size:1rem}section,.panel{padding:18px}textarea{min-height:100px}.panel-item{min-height:50px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="small muted">PRIVATE PROTOTYPE / NO AI API / NO AUTOMATIC PUBLICATION</div>
+  <h1>漫画・物語制作ワークベンチ v0.12</h1>
+  <p class="small">PROJECT MIRROR × 卑弥呼の声 ── コマ管理・限定修正・考証QAの実験版</p>
+</header>
+<main>
+<aside>
+  <section>
+    <h2>作品・データ</h2>
+    <p class="notice small">デモは正式Canonではありません。ブラウザ内の一時データです。変更したら必ずJSONで保存してください。</p>
+    <div class="actions"><button id="mirror" type="button">MIRRORデモ</button><button id="himiko" type="button">卑弥呼デモ</button></div>
+    <div class="actions" style="margin-top:10px"><button class="primary" id="export" type="button">JSON保存</button>
+      <label for="import" class="file-label" style="margin:0">JSON読込</label>
+      <input class="hidden" id="import" type="file" accept="application/json,.json"></div>
+    <p id="context" class="small muted"></p>
+    <p class="small"><a href="#activeTitle">編集中のコマ・QA画面へ移動 ↓</a></p>
+    <p><a id="imageLab" href="./image-lab.html">画像の部分修正・MASTER参照検査へ →</a></p>
+    <p><a id="balloonLab" href="./balloon-lab.html">吹き出し画像QAへ（まずこの原稿をJSON保存）→</a></p>
+    <p><a id="shotPreflight" href="./shot-preflight.html">独立した原画の画質・ポスター検査へ（v0.13）→</a></p>
+  </section>
+  <section>
+    <details id="vaultDetail">
+    <summary style="font-weight:700;cursor:pointer;padding:8px 0;min-height:40px">作業データ保護・復元（タップして開く）</summary>
+    <p class="small">作業を保存したタイミングで、現在とひとつ前の草稿をこの端末に保持できます。初期設定は<strong>無効</strong>。有効化した端末の別利用者から内容を閲覧される可能性があるため、共有端末では使わないでください。</p>
+    <div class="actions">
+      <button id="vaultEnable" type="button">端末内の復旧保存を有効化</button>
+      <button id="vaultDisable" type="button">今後の自動保存を停止</button>
+    </div>
+    <div class="actions" style="margin-top:10px">
+      <button id="vaultRestoreLatest" type="button">最新の草稿を復元</button>
+      <button id="vaultRestorePrevious" type="button">ひとつ前を復元</button>
+      <button id="vaultClear" class="danger" type="button">復旧データ2件を消去</button>
+    </div>
+    <p id="vaultStatus" role="status" class="small muted" style="white-space:pre-wrap">保存状態を確認中です。</p>
+    <p class="small warning">復旧ポイントは暗号化されません。ブラウザの保存領域が削除されると消失します。重要な作品は必ず「JSON保存」も併用してください。編集中の未保存テキストは復元対象外です。</p>
+    </details>
+  </section>
+  <section>
+    <h2>FACTORY OSから安全に連携</h2>
+    <p class="small">既存の原稿・人物情報を、<strong>読み取り専用の草稿コピー</strong>として取り込みます。MASTER画像や正式Canonの承認は引き継ぎません。</p>
+    <div class="actions"><button type="button" id="factoryScan">この端末のFACTORY OSを読み込む</button></div>
+    <p class="small muted">既存PWAと同じブラウザ・同じHTTPSアドレスでのみ利用できます。データの自動読込や書き戻しは行いません。</p>
+    <label for="factoryBackup" class="file-label">代わりに既存OSのバックアップJSONを選ぶ</label>
+    <input type="file" id="factoryBackup" accept=".json,application/json" aria-label="FACTORY OSバックアップJSON" />
+    <p class="small muted">バックアップは最大32MB。画像データは取り込まず、元のページ原稿のみ使用します。</p>
+    <label for="factoryPages">読み込むページ</label>
+    <select id="factoryPages" class="panel-item" disabled><option value="">まだ読み込まれていません</option></select>
+    <button class="primary" type="button" id="factoryUse" disabled>選択ページを草稿コピーにする</button>
+    <p id="factoryMsg" class="small muted" role="status">既存OSの保存領域は一切書き換えません。</p>
+  </section>
+  <section>
+    <h2>ページ・コマ選択</h2>
+    <div id="panels"></div>
+  </section>
+  <section>
+    <h2>安全性と制限</h2>
+    <p class="small">本ツールは外部API、画像生成、画像認識、端末保存への自動書き込みを行いません。QAは構造化データと人間が登録した確認結果を検査します。画風や同一人物性をAIが見分けた結果ではありません。</p>
+    <p class="small">FACTORY OSからの読み取り専用連携は利用者がボタンを押した場合だけ実行します。書き戻し、MASTER画像の自動転送、Cloudflare・SNSへの接続はありません。</p>
+  </section>
+</aside>
+<article>
+  <section>
+    <h2 id="activeTitle">編集するコマ</h2>
+    <p id="authority" class="small muted"></p>
+    <p id="lock" class="notice small"></p>
+    <p id="sourceLockStatus" class="notice small" role="status">原稿照合が未実行です。</p>
+    <div id="editor"></div>
+    <div class="actions" style="margin-top:14px">
+      <button class="primary" id="save" type="button">このコマだけ保存</button>
+      <button id="qa" type="button">QA再実行</button>
+      <button id="undo" type="button">直前の編集を取り消す</button>
+      <button id="restoreSource" type="button">確定セリフだけ元に戻す</button>
+      <button id="approve" type="button">検査済みとして承認・ロック</button>
+      <button id="fork" type="button">承認コマから新規草稿</button>
+    </div>
+    <p class="small muted">承認操作はこの作業用JSON内だけの状態です。正式Canonの承認・更新とは異なります。</p>
+  </section>
+  <section>
+    <h2>QAレポート</h2>
+    <div id="summary"></div>
+    <div id="issues"></div>
+  </section>
+  <section>
+    <h2>作画指示書（AI生成未接続）</h2>
+    <div class="actions"><button id="prompt" type="button">選択コマの指示書を作る</button><button id="copy" type="button">指示書をコピー</button></div>
+    <pre id="promptText">選択コマの指示書を作ると、人物・セリフ・小道具・伏線・考証の条件をまとめます。</pre>
+  </section>
+  <section>
+    <h2>操作ログ</h2>
+    <div id="log" class="small muted">デモが読み込まれています。</div>
+  </section>
+</article>
+</main>
+<footer>検証用の独立画面。正式Canonは必ず別途参照・承認してください。</footer>
+<script src="./engine.js"></script>
+<script src="./factory-bridge.js"></script>
+<script src="./dialogue-codec.js"></script>
+<script src="./sha256.js"></script>
+<script src="./draft-vault.js"></script>
+<script>
+(function(){
+"use strict";
+const W=window.ComicWorkbench,B=window.ComicFactoryBridge,C=window.ComicDialogueCodec,V=window.ComicDraftVault;
+const $=id=>document.getElementById(id);
+let doc=W.demo("mirror"), selected="P01", dirty=false, promptText="",factorySource=null,needsExport=false;
+function refreshVault(statusMessage){
+ try{
+  const state=V.inspect(window.localStorage,W.assertDocument);
+  $("vaultEnable").disabled=state.enabled;
+  $("vaultDisable").disabled=!state.enabled;
+  $("vaultRestoreLatest").disabled=state.latest.state!=="VALID";
+  $("vaultRestorePrevious").disabled=state.previous.state!=="VALID";
+  const info=name=>{
+    const a=state[name];
+    return a.state==="VALID"?
+      a.title+"｜"+a.createdAt+"｜"+a.selected:
+      a.state==="CORRUPTED"?"破損（復元不可）":"なし";
+  };
+  $("vaultStatus").textContent=(statusMessage?statusMessage+" / ":"")+
+    (state.enabled?"端末内の復旧保存：有効":"端末内の復旧保存：無効")+
+    "\n 最新: "+info("latest")+"\n ひとつ前: "+info("previous");
+ }catch(e){
+  $("vaultStatus").textContent="端末内の保存領域を使えません："+e.message+"。手動JSON保存を利用してください。";
+  $("vaultRestoreLatest").disabled=true;$("vaultRestorePrevious").disabled=true;
+ }
+}
+function checkpoint(){
+ needsExport=true;
+ try{
+  const r=V.save(window.localStorage,doc,selected,W.assertDocument);
+  refreshVault(r.saved?"端末内に草稿を記録しました":"復旧保存は無効です");
+  if(!r.saved)return;
+ }catch(e){
+  refreshVault("端末内の保存に失敗しました。必ずJSONを手動保存してください："+e.message);
+ }
+}
+function loadVaultSlot(slot){
+ try{
+  if(dirty&&!window.confirm("未保存の入力は復元できません。破棄しますか？"))return;
+  const checkpoint=V.restore(window.localStorage,slot,W.assertDocument);
+  if(!window.confirm("草稿「"+checkpoint.doc.title+"」を復元して、現在のラボ作業を置き換えますか？ 元のFACTORY OSには書き戻しません。"))return;
+  doc=checkpoint.doc;selected=checkpoint.selected;dirty=false;needsExport=true;promptText="";render();
+  refreshVault("草稿を復元しました。正式Canonの承認にはなりません。");
+ }catch(e){refreshVault("復元できません："+e.message)}
+}
+$("vaultEnable").onclick=()=>{
+ if(!window.confirm("この端末のブラウザ保存領域に、作品の文章・原稿を暗号化せず保存します。共有端末では推奨しません。有効にしますか？"))return;
+ try{
+  V.setEnabled(window.localStorage,true);
+  refreshVault("端末内の復旧保存を有効にしました。次にコマを保存した時から記録します。以前の復旧データはそのままです。");
+ }catch(e){refreshVault("保存を有効にできません："+e.message)}
+};
+$("vaultDisable").onclick=()=>{
+ try{V.setEnabled(window.localStorage,false);refreshVault("今後の自動保存を停止しました。保存済みの復旧データは残ります。")}
+ catch(e){refreshVault("停止できません："+e.message)}
+};
+$("vaultRestoreLatest").onclick=()=>loadVaultSlot("latest");
+$("vaultRestorePrevious").onclick=()=>loadVaultSlot("previous");
+$("vaultClear").onclick=()=>{
+ if(!window.confirm("保存された最新・ひとつ前の復旧データを完全に消去しますか？ FACTORY OSのデータは消去しません。"))return;
+ try{V.clear(window.localStorage);refreshVault("復旧データを消去しました")}
+ catch(e){refreshVault("消去できません："+e.message)}
+};
+const CHECK_LABELS={
+ identity:"顔・体型・服装がMASTERと一致（人が画像を見て確認）",
+ bubbleSpeaker:"セリフ・話者・吹き出し尻尾を確認",
+ storyLogic:"時系列・因果関係・視線を確認",
+ visualEvidence:"証拠・小道具・見せるタイミングを確認"
+};
+const strList=s=>s.split(/[\n,、，]/).map(x=>x.trim()).filter(Boolean);
+const unique=a=>[...new Set(a)];
+function el(tag,txt,cls){const x=document.createElement(tag);if(txt!=null)x.textContent=txt;if(cls)x.className=cls;return x}
+function addText(parent,tag,txt,cls){const x=el(tag,txt,cls);parent.appendChild(x);return x}
+function formField(parent,id,title,value,multi,help){
+ const label=el("label",title);label.htmlFor=id;parent.append(label);
+ const e=el(multi?"textarea":"input");e.id=id;
+ if(!multi)e.type="text";e.value=value;e.addEventListener("input",()=>{dirty=true;});parent.append(e);
+ if(help)addText(parent,"p",help,"small muted");return e;
+}
+function fileMessage(msg,bad){const p=$("log");p.textContent=msg;p.className=bad?"small error":"small good";}
+function allPanels(){return doc.pages.flatMap(pg=>pg.panels.map(p=>({pg,p})))}
+function active(){return allPanels().find(({p})=>p.id===selected)?.p}
+function guarded(fn){try{fn()}catch(e){fileMessage("処理できません: "+e.message,true)}}
+function choose(id){
+ if(dirty&&!window.confirm("未保存の変更があります。破棄して別コマへ移動しますか？"))return;
+ selected=id;dirty=false;promptText="";render();
+}
+function addValue(parent,id,title,value,help){return formField(parent,id,title,value,false,help)}
+function render(){
+ W.assertDocument(doc);
+ const p=active();if(!p)throw Error("選択コマが見つかりません");
+ $("context").textContent=doc.title+" / "+allPanels().length+"コマ / 履歴"+(doc.audit||[]).length+"件";
+ $("imageLab").href="./image-lab.html?project="+encodeURIComponent(doc.project)+"&panel="+encodeURIComponent(selected);
+ $("authority").textContent="MASTER参照（デモ用の文字情報のみ・実物は読み込んでいません）: "+doc.canon.reference;
+ $("activeTitle").textContent=p.id+" — "+(p.status==="approved"?"承認済み／編集禁止":"草稿")+" / revision "+p.revision;
+ $("lock").textContent=p.status==="approved"?"承認済みコマです。修正するには複製して新規草稿を作ります。":"選択コマ以外は変更しません。目視確認は人が実際の画像を見て実施してください。";
+ const source=W.sourceReport(doc,selected);
+ $("sourceLockStatus").textContent=source.status==="NOT_IMPORTED"?
+   "SOURCE LOCK：FACTORYからの取込ではありません。正式原稿との照合は別途必要です。" :
+   source.status==="MATCH"?"SOURCE LOCK一致：元原稿の話者・セリフ・順序を保持（画像未検査）。":
+   "SOURCE LOCK未合格："+source.status+"｜"+source.mismatches.join("／");
+ $("sourceLockStatus").className=source.status==="MATCH"?"notice small good":"notice small warning";
+ $("restoreSource").disabled=!doc.sourceInfo||p.status==="approved";
+ const panels=$("panels");panels.replaceChildren();
+ doc.pages.forEach(pg=>{
+  addText(panels,"p","ページ: "+pg.id,"small muted");
+  pg.panels.forEach(item=>{
+   const problems=W.panelReport(doc,item.id);
+   const e=el("button",item.id+" · "+(item.status==="approved"?"ロック":"草稿")+" · ERROR "+problems.filter(q=>q.severity==="ERROR").length,"panel-item"+(selected===item.id?" current":""));
+   e.type="button";e.onclick=()=>choose(item.id);panels.append(e);
+  });
+ });
+ const holder=$("editor");holder.replaceChildren();
+ const editing=p.status!=="approved";
+ const list=el("p","登場人物ID: "+doc.canon.characters.map(c=>c.id+"="+c.name+"("+c.role+")").join(" / "),"small muted");holder.append(list);
+ formField(holder,"scene","場面／所作",p.scene,true);
+ const grid=el("div");grid.className="grid2";holder.append(grid);
+ addValue(grid,"cast","画面にいる人物ID（カンマ区切り）",p.cast.join(", "));
+ addValue(grid,"requiredCast","必要な人物ID",p.requiredCast.join(", "));
+ addValue(grid,"phase","物語段階 setup / investigation / reveal",p.phase);
+ addValue(grid,"assetRef","完成画像の参照先（パスや管理ID）",p.assetRef,"画像の実体はアップロードされません。文字列だけ保存されます。");
+ formField(holder,"lines","セリフ（1行：話者ID | 相手ID | セリフ）",C.format(p.lines),true,
+    "例: guest | staff | 責任者を呼んでください。 無言コマは空欄。");
+ const tags=el("div");tags.className="grid2";holder.append(tags);
+ [["requiredProps","必須小道具"],["visibleProps","確認できる小道具"],
+  ["requiredClues","今回必要な手掛かり"],["visibleClues","確認できる手掛かり"],
+  ["hiddenClues","公開段階まで見せない証拠"]].forEach(([id,name])=>addValue(tags,id,name,p[id].join(", ")));
+ if(doc.project==="himiko")formField(holder,"historicalClaims","歴史考証（1行：対象 | 区分 | 出典）",
+   p.historicalClaims.map(h=>h.subject+" | "+h.basis+" | "+h.source).join("\n"),true,
+   "区分: primary_source / archaeology / reconstruction / fiction。創作以外は出典を要確認。");
+ addText(holder,"h2","人による目視検査（自動画像認識ではありません）");
+ for(const [key,title] of Object.entries(CHECK_LABELS)){
+  const lab=el("label");lab.className="check-row";
+  const box=el("input");box.type="checkbox";box.id="chk-"+key;box.checked=p.visualChecks[key];
+  box.addEventListener("change",()=>{dirty=true});lab.append(box,document.createTextNode(title));holder.append(lab);
+ }
+ holder.querySelectorAll("input,textarea").forEach(x=>x.disabled=!editing);
+ $("save").disabled=!editing;$("approve").disabled=!editing;$("fork").disabled=editing;
+ $("undo").disabled=!doc.audit?.length||doc.audit[doc.audit.length-1].action!=="edit";
+ $("promptText").textContent=promptText||"指示書はまだ作成されていません。";
+ report();
+}
+function report(){
+ const issues=W.inspect(doc), specific=issues.filter(x=>x.panelId===selected);
+ const E=issues.filter(x=>x.severity==="ERROR").length;
+ const WARN=issues.filter(x=>x.severity==="WARN").length;
+ $("summary").textContent="全体: ERROR "+E+"件 / WARN "+WARN+"件 ｜ 選択コマ: "+specific.length+"件 ｜ SOURCE LOCK: "+W.sourceReport(doc,selected).status;
+ const holder=$("issues");holder.replaceChildren();
+ if(!specific.length)addText(holder,"p","構造化チェックで問題は見つかりません。画像検査の自動実施を意味しません。","good");
+ specific.forEach(x=>{
+  const e=el("div");e.className="issue";e.dataset.level=x.severity;
+  addText(e,"strong",x.severity+" / "+x.code);
+  addText(e,"p",x.message,"small");holder.append(e);
+ });
+}
+function splitLines(raw,kind){
+ return raw.split("\n").filter(s=>s.trim()).map((row,n)=>{
+  const first=row.indexOf("|"),second=row.indexOf("|",first+1);
+  if(first<0||second<0)throw Error(kind+"の"+(n+1)+"行目は「ID | ID | 本文」の形式にしてください");
+  const a=row.slice(0,first).trim(),b=row.slice(first+1,second).trim();
+  // Strip only the one separator-space emitted by the editor; preserve source dialogue whitespace.
+  const text=row.slice(second+1).replace(/^ /,"");
+  return kind==="history"?{subject:a,basis:b,source:text}:{speaker:a,target:b,text};
+ });
+}
+function value(id){return $(id).value}
+function save(){
+ const patch={
+   scene:value("scene"),phase:value("phase").trim(),cast:unique(strList(value("cast"))),
+   requiredCast:unique(strList(value("requiredCast"))),
+   lines:C.retainOrParse(value("lines"),active().lines),
+   assetRef:value("assetRef").trim(),requiredProps:unique(strList(value("requiredProps"))),
+   visibleProps:unique(strList(value("visibleProps"))),requiredClues:unique(strList(value("requiredClues"))),
+   visibleClues:unique(strList(value("visibleClues"))),hiddenClues:unique(strList(value("hiddenClues"))),
+   visualChecks:Object.fromEntries(W.CHECKS.map(k=>[k,$("chk-"+k).checked]))
+ };
+ if(doc.project==="himiko")patch.historicalClaims=splitLines(value("historicalClaims"),"history");
+ doc=W.edit(doc,selected,patch);dirty=false;render();checkpoint();fileMessage("保存完了："+selected+" のみ revision を更新しました。");
+}
+$("save").onclick=()=>guarded(save);
+$("qa").onclick=()=>guarded(()=>{if(dirty){fileMessage("未保存の入力があります。保存してからQAしてください。",true);return}report();fileMessage("構造化QAを再実行しました（画像検査は未実施）。")});
+$("approve").onclick=()=>guarded(()=>{
+ if(dirty){fileMessage("未保存の入力があります。保存してください。",true);return}
+ if(!window.confirm("人による画像チェックが本当に完了しましたか？ この操作は正式Canon承認ではありません。"))return;
+ doc=W.approve(doc,selected);render();checkpoint();fileMessage("コマを検査済みとしてロックしました。");
+});
+$("fork").onclick=()=>guarded(()=>{
+ const result=W.forkDraft(doc,selected);doc=result.document;selected=result.newPanelId;dirty=false;render();checkpoint();fileMessage("既存の承認コマを保持したまま、新規草稿を作成しました。");
+});
+$("undo").onclick=()=>guarded(()=>{if(dirty&&!window.confirm("編集中の内容を破棄して取り消しますか？"))return;
+ doc=W.undo(doc);dirty=false;render();checkpoint();fileMessage("直前の編集を取り消しました。");
+});
+$("restoreSource").onclick=()=>guarded(()=>{
+ if(dirty&&!window.confirm("まだ保存していない入力を破棄し、確定セリフだけ元に戻しますか？"))return;
+ if(!window.confirm("このコマのセリフと話者をFACTORY取込時に戻します。元のPWAや他コマには変更しません。続けますか？"))return;
+ doc=W.restoreSourceLines(doc,selected);dirty=false;promptText="";render();checkpoint();
+ fileMessage("話者・セリフを復元しました。目視QAは再確認してください。");
+});
+$("mirror").onclick=()=>reset("mirror");$("himiko").onclick=()=>reset("himiko");
+function reset(project){
+ if(!window.confirm("現在の内容を破棄して、非Canonデモを読み込みますか？ JSON保存済みか確認してください。"))return;
+ doc=W.demo(project);selected=doc.pages[0].panels[0].id;dirty=false;promptText="";render();checkpoint();fileMessage("非Canonデモを読み込みました。");
+}
+function factoryMessage(m,bad=false){
+ const out=$("factoryMsg");out.textContent=m;out.className=bad?"small error":"small good";
+}
+function offerFactoryState(value){
+ const next=B.extract(value),rows=B.listPages(next);
+ if(!rows.length)throw Error("原稿ページが見つかりません");
+ factorySource=next;
+ const select=$("factoryPages");select.replaceChildren();
+ for(const p of rows){
+   const opt=document.createElement("option");opt.value=p.id;
+   opt.textContent=p.label+" ／ "+(p.panels?p.panels+"コマ":"コマ割り未登録");select.append(opt);
+ }
+ select.value=rows.some(p=>p.id===next.selectedPage)?next.selectedPage:rows[0].id;
+ select.disabled=false;$("factoryUse").disabled=false;
+ factoryMessage("読み取り対象を取得しました（"+rows.length+"ページ）。取り込むページを選んでください。");
+}
+$("factoryScan").onclick=()=>guarded(()=>{
+ try{offerFactoryState(B.fromStorage(window.localStorage))}
+ catch(e){factoryMessage(e.message,true)}
+});
+$("factoryBackup").addEventListener("change",async event=>{
+ const file=event.target.files?.[0];event.target.value="";
+ if(!file)return;
+ try{
+  if(file.size<1||file.size>32*1024*1024)throw Error("JSONは32MB以内にしてください。大きな画像付きバックアップは同一ブラウザの連携をご利用ください");
+  offerFactoryState(await file.text());
+ }catch(e){factoryMessage("読込失敗: "+e.message,true)}
+});
+$("factoryUse").onclick=()=>guarded(()=>{
+ if(!factorySource)throw Error("まず保存データまたはバックアップを読み込んでください");
+ const converted=B.convert(factorySource,$("factoryPages").value);
+ W.assertDocument(converted);
+ const lineCount=converted.pages[0].panels.reduce((n,p)=>n+p.lines.length,0);
+ if(!window.confirm("既存データは一切変更せず、このラボの作業データを「"+
+   converted.title+"」の草稿に置き換えます。"+lineCount+
+   "行を取り込みます。ラボ側で保存していない作業は失われます。続けますか？"))return;
+ doc=converted;selected=doc.pages[0].panels[0].id;dirty=false;promptText="";
+ render();checkpoint();
+ $("activeTitle").scrollIntoView({behavior:"smooth",block:"start"});
+ const warnings=converted.importWarnings||[];
+ factoryMessage("草稿コピーを作成しました。元のFACTORY OSは変更していません。"+
+   (warnings.length?" 注意："+warnings.join("／"):" 本体の正式MASTERと目視QAは別途必要です。"));
+});
+$("prompt").onclick=()=>guarded(()=>{
+ if(dirty){fileMessage("未保存の入力があります。保存してから指示書を作ってください。",true);return}
+ promptText=W.promptFor(doc,selected);$("promptText").textContent=promptText;
+});
+$("copy").onclick=()=>guarded(async()=>{
+ if(!promptText)throw Error("まず指示書を作成してください");
+ try{await navigator.clipboard.writeText(promptText);fileMessage("指示書をコピーしました。");}
+ catch(e){fileMessage("クリップボードを使えません。表示された指示書を手動でコピーしてください。",true);}
+});
+$("export").onclick=()=>guarded(()=>{
+ if(dirty){fileMessage("未保存の変更があります。まずコマを保存してください。",true);return}
+ const blob=new Blob([JSON.stringify(doc,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="comic-workbench-"+doc.project+"-"+new Date().toISOString().slice(0,10)+".json";
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ needsExport=false;
+ fileMessage("JSONを書き出しました。端末のダウンロード先を確認してください。");
+});
+$("import").addEventListener("change",async e=>{
+ const file=e.target.files?.[0];e.target.value="";if(!file)return;
+ if(file.size>1024*1024){fileMessage("1MBを超えるJSONは読み込めません。",true);return}
+ if(dirty&&!window.confirm("未保存の変更を破棄して読み込みますか？"))return;
+ try{
+  const next=JSON.parse(await file.text());W.assertDocument(next);
+  const firstId=next.pages.flatMap(x=>x.panels)[0]?.id;
+  if(!firstId)throw Error("コマがありません");
+  doc=next;selected=firstId;
+  dirty=false;promptText="";render();checkpoint();fileMessage("JSONを読み込みました。正式Canonの真偽は別途確認してください。");
+ }catch(err){fileMessage("読込失敗: "+err.message,true)}
+});
+window.addEventListener("beforeunload",e=>{
+ let localRecovery=false;
+ try{localRecovery=V.enabled(window.localStorage)}catch(_){}
+ if(dirty||(needsExport&&!localRecovery)){e.preventDefault();e.returnValue=""}
+});
+render();refreshVault();
+})();
+</script>
+</body>
+</html>

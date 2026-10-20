@@ -1,0 +1,29 @@
+name: Comic Workbench QA + Offline Package (no deploy)
+on:
+  pull_request:
+    paths:
+      - 'labs/comic-workbench/**'
+      - '.github/workflows/comic-workbench-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-tests-and-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+      - name: Automated unit and portable tests
+        run: node --test labs/comic-workbench/*.test.cjs
+      - name: Python OCR sidecar parser tests (no OCR engine or external images)
+        run: python3 -m unittest discover -s labs/comic-workbench -p 'ocr_sidecar_test.py' -v
+      - name: Build offline HTML bundle
+        run: node labs/comic-workbench/build-portable.cjs
+      - name: Publish downloadable test files (not a deployment)
+        uses: actions/upload-artifact@v4
+        with:
+          name: comic-workbench-offline-v0.13
+          path: labs/comic-workbench/portable-dist/
+          if-no-files-found: error
+          retention-days: 14

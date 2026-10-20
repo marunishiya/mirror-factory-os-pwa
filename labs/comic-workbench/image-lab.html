@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Image QA Lab | MIRROR × 卑弥呼の声</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#0f1524;color:#f1f5fc}
+*{box-sizing:border-box}body{margin:0}header,main,footer{max-width:1050px;margin:auto;padding:18px}
+h1{font-size:1.4rem;margin:8px 0}h2{font-size:1.05rem;margin:6px 0 12px}h3{font-size:.95rem}
+p,li{line-height:1.65}small,.muted{color:#b5c2d6}a{color:#8bbefc}
+section{border:1px solid #36435c;background:#1b263b;border-radius:12px;padding:16px;margin:14px 0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pic{min-width:0}.pic canvas{display:block;max-width:100%;height:auto;border:1px solid #51617a;border-radius:9px;background:#101929}
+canvas.pick{touch-action:none;cursor:crosshair}
+input[type=text],select{font:inherit;background:#121c2e;color:#fff;padding:10px;border:1px solid #657591;border-radius:8px;max-width:100%}
+input[type=text]{width:180px}input[type=file]{width:100%;font:inherit;max-width:400px}
+input[type=checkbox]{width:19px;height:19px;accent-color:#75b8fa}
+label{display:block;font-size:.93rem;margin:8px 0}
+button{background:#314c71;border:1px solid #7195ba;border-radius:9px;color:white;cursor:pointer;padding:10px 16px;min-height:43px;font:inherit}
+button:disabled{opacity:.45;cursor:not-allowed}button.primary{background:#215ea7}button:focus-visible,input:focus-visible{outline:3px solid #9bbaff;outline-offset:2px}
+.notice{border-left:3px solid #a6cbff;padding:10px 12px;background:#24354e;border-radius:6px}
+.warn{color:#ffe4aa}.fail{color:#ffa6b5}.pass{color:#a3eed1}
+pre{white-space:pre-wrap;word-break:break-word;padding:12px;background:#101929;border:1px solid #354a69;border-radius:8px;max-height:340px;overflow:auto}
+#selection{font-variant-numeric:tabular-nums}
+@media(max-width:650px){.cols{grid-template-columns:1fr}header,main,footer{padding:13px}}
+</style>
+</head>
+<body>
+<header>
+<a href="./index.html">← 漫画制作ワークベンチに戻る</a>
+<h1>画像の部分修正・人物参照検査ラボ v0.12</h1>
+<p class="muted">端末内の画像だけで比較します。外部AIやGitHubに画像を送信しません。正式MASTERは書き換えません。</p>
+</header>
+<main>
+<section>
+<h2>1. 対象作品・コマ</h2>
+<div class="row"><label>作品
+<select id="project"><option value="mirror">PROJECT MIRROR</option><option value="himiko">卑弥呼の声</option></select>
+</label>
+<label>コマ識別子 <input id="panelId" type="text" maxlength="100" value="P01" autocomplete="off"></label></div>
+<p class="notice small">参考画像は「元のCHARACTER MASTER」との<strong>人による目視照合用</strong>です。元画像と修正版を比べる差分判定とは別です。</p>
+<div class="cols">
+  <label>① 参考MASTER画像（任意）
+    <input id="masterFile" type="file" accept="image/png,image/jpeg,image/webp">
+    <small>顔・衣装・特徴の目視照合用。書き込み不可。</small>
+  </label>
+  <label>② 修正前のコマ画像（必須）
+    <input id="beforeFile" type="file" accept="image/png,image/jpeg,image/webp">
+    <small>変更前の合格画像を選びます。</small>
+  </label>
+  <label>③ 修正後のコマ画像（必須）
+    <input id="afterFile" type="file" accept="image/png,image/jpeg,image/webp">
+    <small>部分修正版。元画像と同じ幅・高さが必要です。</small>
+  </label>
+</div>
+<p class="muted small">PNG・JPEG・WebPのみ。各ファイル最大10MB、1画像400万画素まで。SVGや外部URLは受け付けません。ブラウザを閉じると画像は保持されません。</p>
+<div id="filesStatus" class="small"></div>
+</section>
+<section>
+<h2>MASTER参照台帳（端末内のみ）</h2>
+<p class="notice">登録は<strong>利用者による原本確認の自己申告</strong>です。正式Canonの承認を自動認定する機能ではありません。</p>
+<div class="row">
+<label>登録する人物ID・背景ID（英数字）<input id="authorityId" type="text" maxlength="64" placeholder="例: sane" autocomplete="off"></label>
+<label>区分 <select id="authorityKind"><option value="character">人物</option><option value="scene">背景・シーン</option></select></label>
+<label>表示名 <input id="authorityLabel" type="text" maxlength="120" placeholder="例: サネ"></label>
+</div>
+<label>確認メモ <input id="authorityNote" type="text" maxlength="500" style="width:min(100%,580px)" placeholder="原本の承認場所・日付などを自分で記録"></label>
+<label><input id="authorityConfirm" type="checkbox"> この画像を正式MASTER原本と照合した（私による確認）</label>
+<div class="row">
+<button id="authorityAdd" type="button">現在のMASTER画像を参照登録</button>
+<button id="authorityExport" type="button">参照台帳JSON保存</button>
+<label>参照台帳JSON読込（最大256KB） <input id="authorityImport" type="file" accept=".json,application/json"></label>
+</div>
+<p class="small muted">画像はJSONに含まれず、ハッシュ・画像寸法・識別名だけが記録されます。再照合時は原本画像の再選択が必要です。</p>
+<p id="authorityStatus" class="notice" role="status" aria-live="polite">参照台帳が未登録です。</p>
+</section>
+<section>
+<h2>2. 修正が許される範囲を選択</h2>
+<p>「修正前」の画像上を指でなぞり、変更を許す四角形を指定します。範囲外が一定以上変わった場合はFAILにします。</p>
+<div class="cols">
+  <div class="pic"><h3>参考MASTER（目視比較）</h3><canvas id="masterCanvas" width="480" height="280" aria-label="参考画像"></canvas></div>
+  <div class="pic"><h3>修正前（ここで範囲を指定）</h3><canvas class="pick" id="beforeCanvas" width="480" height="280" aria-label="変更可能な領域を指で指定"></canvas></div>
+</div>
+<p id="selection" class="muted">修正範囲が未指定です。</p>
+<button id="clearRoi" type="button">範囲指定を取り消す</button>
+<div class="cols">
+  <div class="pic"><h3>修正後</h3><canvas id="afterCanvas" width="480" height="280" aria-label="修正後画像"></canvas></div>
+  <div class="pic"><h3>差分可視化（赤＝変化した画素）</h3><canvas id="diffCanvas" width="480" height="280" aria-label="差分ヒートマップ"></canvas></div>
+</div>
+</section>
+<section>
+<h2>3. 画素差分検査</h2>
+<p class="muted small">各画素のRGBA最大差が24を超える場合を「変化あり」と判定。修正範囲外の変化画素率が0.5%を超えるとFAILです。領域全体が60%以上の場合も受付不可。画像圧縮や色補正によってFAILになることがあります。</p>
+<div class="row"><button id="sample" type="button">練習用画像で試す</button><button class="primary" id="compare" type="button">修正前後を比較する</button><button id="compose" type="button">指定範囲だけ合成してPNG保存</button><button id="reset" type="button">画像と結果を消去する</button></div>
+<p id="composeStatus" class="small muted">範囲内だけを候補画像で差し替え、範囲外は元の画素を保持します。合成画像は保存操作をした時だけ端末にダウンロードされます。</p>
+<div class="pic"><h3>合成結果（変更範囲以外は元画像）</h3><canvas id="mergedCanvas" width="480" height="280" aria-label="範囲指定合成画像"></canvas></div>
+<div id="result" class="notice" role="status" aria-live="polite">2画像を指定し、修正可能領域を指で選択してください。</div>
+</section>
+<section>
+<h2>4. 人によるMASTER・ストーリー照合</h2>
+<p class="muted small">自動顔照合・セリフOCR・歴史考証判定ではありません。画像を見て確認したときだけチェックを付けてください。</p>
+<label><input id="identity" type="checkbox"> 正式CHARACTER MASTERと顔・体格・髪などが一致</label>
+<label><input id="clothing" type="checkbox"> 衣服・装身具・色が設定と一致</label>
+<label><input id="dialogue" type="checkbox"> セリフ・話者・吹き出し・視線を目視確認</label>
+<label><input id="story" type="checkbox"> 伏線・小道具・背景／歴史的整合性を確認</label>
+<div class="row"><button id="export" type="button">検査レポートJSON保存</button><button id="prompt" type="button">再修正用の指示書を作成</button><button id="copy" type="button">指示書をコピー</button></div>
+<pre id="details">検査実行後に結果と画像SHA-256を保存できます。</pre>
+</section>
+</main>
+<footer>試験版：画素差分がPASSでも、人物の同一性や完成作品のCanon合格を意味しません。</footer>
+<script src="./image-qa.js"></script>
+<script src="./authority.js"></script>
+<script src="./sha256.js"></script>
+<script>
+(function(){
+"use strict";
+const I=window.ComicImageQA, A=window.ComicAuthority, $=id=>document.getElementById(id);
+const MAX_FILE=10*1024*1024, MAX_PIXELS=4000000;
+const slots={master:null,before:null,after:null};
+const registries={mirror:null,himiko:null};
+let roi=null, anchor=null, comparison=null, report=null, prompt="", compositeRecord=null;
+const params=new URLSearchParams(location.search);
+function binding(){
+ const project=$("project").value, characterId=$("authorityId").value.trim();
+ return A.verify(registries[project],project,$("authorityKind").value,characterId,meta("master"));
+}
+function refreshAuthorityStatus(){
+ const b=binding(), project=$("project").value, reg=registries[project];
+ const entryCount=reg?reg.entries.length:0;
+ const labels={
+   NO_REGISTRY:"台帳未登録：端末で原本を選び、原本確認後に登録できます",
+   UNREGISTERED:"選択IDは未登録です。ハッシュ一致の判定はできません",
+   NO_IMAGE:"登録済みIDです。元のMASTER画像を選択して照合してください",
+   MATCH:"ハッシュ一致：登録済み原本と同一ファイルです（Canon承認の証明ではありません）",
+   MISMATCH:"警告：登録済みMASTER原本とは別のファイルです。顔・衣装の確認に使用しないでください",
+   WRONG_PROJECT:"作品が違います。登録を使い回さないでください"
+ };
+ $("authorityStatus").textContent=(labels[b.status]||b.status)+" ／ "+project+" 登録件数 "+entryCount;
+ $("authorityStatus").className="notice "+(b.status==="MISMATCH"?"fail":b.status==="MATCH"?"pass":"");
+ const allowed=!!slots.master && (!reg||b.status==="MATCH");
+ $("identity").disabled=!allowed;
+ if(!allowed)$("identity").checked=false;
+}
+function authorityMessage(s,failed){
+ $("authorityStatus").textContent=s;
+ $("authorityStatus").className="notice "+(failed?"fail":"pass");
+}
+if(["mirror","himiko"].includes(params.get("project")))$("project").value=params.get("project");
+if(params.get("panel")&&params.get("panel").length<=100)$("panelId").value=params.get("panel");
+function message(s,level=""){
+ $("result").textContent=s;$("result").className="notice "+level;
+}
+function drawEmpty(id,text){
+ const can=$(id);const ctx=can.getContext("2d");
+ can.width=480;can.height=280;ctx.clearRect(0,0,480,280);
+ ctx.fillStyle="#1b2a43";ctx.fillRect(0,0,480,280);
+ ctx.fillStyle="#b5c2d6";ctx.font="18px sans-serif";ctx.textAlign="center";ctx.fillText(text,240,140);
+}
+function draw(id,slot,withRoi=false){
+ const item=slots[slot];if(!item){drawEmpty(id,"画像未選択");return}
+ const can=$(id);can.width=item.width;can.height=item.height;
+ const ctx=can.getContext("2d",{willReadFrequently:true});
+ ctx.drawImage(item.bitmap,0,0,item.width,item.height);
+ if(withRoi&&roi){
+   const r=roi;
+   ctx.strokeStyle="#ffdf66";ctx.lineWidth=Math.max(2,item.width/300);
+   ctx.fillStyle="rgba(255,224,102,.13)";
+   const x=r.x*item.width,y=r.y*item.height,w=r.width*item.width,h=r.height*item.height;
+   ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);
+ }
+}
+function redraw(){
+ draw("masterCanvas","master");draw("beforeCanvas","before",true);draw("afterCanvas","after");
+ if(!comparison)drawEmpty("diffCanvas","検査前");
+ $("selection").textContent=roi?"修正領域: 左"+(roi.x*100).toFixed(1)+"% / 上"+(roi.y*100).toFixed(1)+
+   "% / 幅"+(roi.width*100).toFixed(1)+"% / 高さ"+(roi.height*100).toFixed(1)+"%":"修正範囲が未指定です。";
+}
+async function readFile(file){
+ if(!file)throw Error("ファイルが選択されていません");
+ if(!["image/png","image/jpeg","image/webp"].includes(file.type))throw Error("対応外の画像形式です");
+ if(file.size<=0||file.size>MAX_FILE)throw Error("ファイルは10MB以内にしてください");
+ if(!window.createImageBitmap)throw Error("このブラウザは画像デコードに対応していません");
+ const bitmap=await createImageBitmap(file);
+ try {
+   if(bitmap.width<1||bitmap.height<1||bitmap.width*bitmap.height>MAX_PIXELS) {
+     throw Error("画像は400万画素以内にしてください");
+   }
+   const data=await file.arrayBuffer();
+   const sha256=await window.ComicHash.sha256(data);
+   return {bitmap,width:bitmap.width,height:bitmap.height,bytes:file.size,name:file.name,sha256};
+ }catch(e){bitmap.close();throw e}
+}
+function revoke(slot){if(slots[slot]?.bitmap)slots[slot].bitmap.close();slots[slot]=null;}
+function setStatus(){
+ const holder=$("filesStatus");holder.replaceChildren();
+ for(const slot of ["master","before","after"]){
+   const item=slots[slot];
+   const p=document.createElement("p");
+   p.textContent=(slot==="master"?"MASTER":slot==="before"?"修正前":"修正後")+": "+
+     (item?item.name+" ("+item.width+"×"+item.height+", SHA-256 "+item.sha256.slice(0,14)+"…)":"未選択");
+   holder.append(p);
+ }
+ refreshAuthorityStatus();
+}
+function resetResult(){
+ comparison=null;report=null;prompt="";compositeRecord=null;
+ for(const id of ["identity","clothing","dialogue","story"])$(id).checked=false;
+ $("details").textContent="変更後の画像を比較してから検査レポートを保存してください。";
+ $("composeStatus").textContent="合成画像は未作成です。";
+ drawEmpty("mergedCanvas","合成前");
+ message("修正前後の画像と指定領域を比較してください。");
+}
+async function loadInto(slot,file){
+ const id=slot+"File";
+ if(!file){revoke(slot);if(slot==="before")roi=null;if(slot==="master")$("authorityConfirm").checked=false;resetResult();redraw();setStatus();return}
+ // Import is transactional: keep the old file if the new one is invalid.
+ const next=await readFile(file);
+ revoke(slot);slots[slot]=next;
+ if(slot==="master")$("authorityConfirm").checked=false;
+ if(slot==="before")roi=null;
+ resetResult();redraw();setStatus();
+ $("details").textContent="SHA-256を計算しました。比較前の画像は端末内のメモリだけに保持されています。";
+}
+for(const slot of ["master","before","after"]){
+ $(slot+"File").addEventListener("change",async e=>{
+  const file=e.target.files?.[0];try{await loadInto(slot,file)}
+  catch(err){message("読み込み失敗: "+err.message,"fail")}
+  e.target.value="";
+ });
+}
+function atPosition(event){
+ const canvas=$("beforeCanvas"),rect=canvas.getBoundingClientRect();
+ return {x:Math.min(1,Math.max(0,(event.clientX-rect.left)/rect.width)),
+   y:Math.min(1,Math.max(0,(event.clientY-rect.top)/rect.height))};
+}
+$("beforeCanvas").addEventListener("pointerdown",e=>{
+ if(!slots.before)return;
+ anchor=atPosition(e);$("beforeCanvas").setPointerCapture(e.pointerId);
+});
+$("beforeCanvas").addEventListener("pointermove",e=>{
+ if(!anchor)return;
+ const p=atPosition(e);
+ const x=Math.min(p.x,anchor.x),y=Math.min(p.y,anchor.y);
+ const width=Math.abs(p.x-anchor.x),height=Math.abs(p.y-anchor.y);
+ if(width>0.005&&height>0.005){
+   roi={x,y,width,height};resetResult();redraw();
+ }
+});
+function endDrag(e){
+ if(!anchor)return;
+ const end=atPosition(e), start=anchor;
+ anchor=null;
+ const next={x:Math.min(start.x,end.x),y:Math.min(start.y,end.y),
+   width:Math.abs(start.x-end.x),height:Math.abs(start.y-end.y)};
+ resetResult();
+ if(next.width*next.height<0.0001){
+   roi=null;redraw();message("小さすぎる範囲は選べません。ドラッグし直してください。","warn");return;
+ }
+ try {roi=I.validateRect(next);redraw()}
+ catch(err){roi=null;redraw();message(err.message,"warn")}
+}
+$("beforeCanvas").addEventListener("pointerup",endDrag);
+$("beforeCanvas").addEventListener("pointercancel",()=>{anchor=null;roi=null;resetResult();redraw()});
+$("clearRoi").onclick=()=>{roi=null;resetResult();redraw()};
+function pixels(item){
+ const canvas=document.createElement("canvas");canvas.width=item.width;canvas.height=item.height;
+ const ctx=canvas.getContext("2d",{willReadFrequently:true});
+ if(!ctx)throw Error("画像用Canvasを作成できません");
+ ctx.drawImage(item.bitmap,0,0);
+ return ctx.getImageData(0,0,item.width,item.height).data;
+}
+function meta(s){
+ const x=slots[s];return x?{name:x.name,bytes:x.bytes,width:x.width,height:x.height,sha256:x.sha256}:null;
+}
+function checks(){return Object.fromEntries(["identity","clothing","dialogue","story"].map(k=>[k,$(k).checked]))}
+function createReport(){
+ if(!comparison)throw Error("画像比較を先に実行してください");
+ const b=binding(), registered=!!registries[$("project").value];
+ if(registered&&$("identity").checked&&b.status!=="MATCH")throw Error("MASTER参照ハッシュの照合が必要です");
+ const value=I.makeReport({project:$("project").value,panelId:$("panelId").value.trim(),
+   master:meta("master"),before:meta("before"),after:meta("after"),
+   result:comparison,review:checks()});
+ if(compositeRecord)value.composite={...compositeRecord};
+ value.authorityBinding={...b};
+ value.masterFileMatched=b.status==="MATCH";
+ return value;
+}
+function compare(){
+ if(!slots.before||!slots.after)throw Error("修正前後の2画像を指定してください");
+ if(!roi)throw Error("修正可能な範囲を選択してください");
+ if(slots.before.width!==slots.after.width||slots.before.height!==slots.after.height){
+   throw Error("修正前後の縦横サイズが異なります。画素比較は実行できません");
+ }
+ const b=pixels(slots.before),a=pixels(slots.after);
+ comparison=I.compare(b,a,slots.before.width,slots.before.height,roi);
+ const mask=I.sampleChangedPixels(b,a,slots.before.width,slots.before.height);
+ const can=$("diffCanvas"),ctx=can.getContext("2d");
+ can.width=slots.before.width;can.height=slots.before.height;
+ ctx.drawImage(slots.after.bitmap,0,0,can.width,can.height);
+ const layer=document.createElement("canvas");layer.width=can.width;layer.height=can.height;
+ layer.getContext("2d").putImageData(new ImageData(mask,can.width,can.height),0,0);
+ ctx.drawImage(layer,0,0);
+ const o=comparison.outside,i=comparison.inside;
+ message("画素差分 "+comparison.verdict+" ｜ 範囲外 "+o.changed+"/"+o.total+
+  "画素 ("+(o.fraction*100).toFixed(2)+"%) ｜ 範囲内 "+i.changed+"/"+i.total+
+  "画素 ("+(i.fraction*100).toFixed(2)+"%)",
+  comparison.verdict==="FAIL"?"fail":comparison.verdict==="PASS"?"pass":"warn");
+ report=createReport();$("details").textContent=JSON.stringify(report,null,2);
+}
+$("sample").onclick=async()=>{
+ try{
+  if((slots.master||slots.before||slots.after)&&!confirm("現在の画像を破棄して、架空のデモ画像に置き換えますか？"))return;
+  const make=async changed=>{
+   const can=document.createElement("canvas");can.width=480;can.height=320;
+   const x=can.getContext("2d");
+   x.fillStyle="#fbf0d9";x.fillRect(0,0,480,320);
+   x.fillStyle="#6c8c70";x.fillRect(0,230,480,90);
+   x.fillStyle="#3d5774";x.fillRect(60,35,180,190);
+   x.fillStyle="#d9bc8a";x.beginPath();x.arc(150,111,42,0,Math.PI*2);x.fill();
+   x.fillStyle="#242936";x.fillRect(80,160,145,8);
+   x.fillStyle="#2c3c50";x.fillRect(245,70,165,155);
+   x.fillStyle="#f8efd9";x.fillRect(258,80,135,125);
+   if(changed){x.fillStyle="#bd454a";x.fillRect(290,115,65,60)}
+   const blob=await new Promise((resolve,reject)=>can.toBlob(b=>b?resolve(b):
+     reject(Error("デモ画像の生成に失敗しました")),"image/png"));
+   return new File([blob],changed?"demo-after.png":"demo-before.png",{type:"image/png"});
+  };
+  const original=await make(false),candidate=await make(true);
+  await loadInto("before",original);
+  await loadInto("after",candidate);
+  $("authorityId").value="demo-panel";
+  $("authorityLabel").value="架空のデモ";
+  $("panelId").value="DEMO_PANEL";
+  $("authorityConfirm").checked=false;
+  roi={x:0.58,y:0.32,width:0.19,height:0.27};
+  resetResult();redraw();setStatus();
+  message("架空の練習画像を生成しました。「比較する」→「指定範囲だけ合成してPNG保存」をお試しください。正式作品ではありません。","pass");
+ }catch(e){message("デモ生成失敗: "+e.message,"fail")}
+};
+$("compare").onclick=()=>{try{compare()}catch(e){comparison=null;report=null;drawEmpty("diffCanvas","検査できません");message("検査できません: "+e.message,"fail")}};
+$("compose").onclick=async()=>{
+ try{
+  if(!slots.before||!slots.after||!roi)throw Error("修正前後の画像と編集領域を指定してください");
+  if(!comparison)compare();
+  const a=slots.before,b=slots.after;
+  if(a.width!==b.width||a.height!==b.height)throw Error("修正前後の画像サイズを揃えてください");
+  const before=pixels(a),candidate=pixels(b);
+  const merged=I.composeRegion(before,candidate,a.width,a.height,roi);
+  const check=I.compare(before,merged,a.width,a.height,roi);
+  if(check.outside.changed!==0)throw Error("保護領域が変わりました。合成を中止します");
+  if(check.verdict!=="PASS")throw Error("指定領域の画素に変化がありません");
+  const can=$("mergedCanvas");can.width=a.width;can.height=a.height;
+  const ctx=can.getContext("2d");if(!ctx)throw Error("合成Canvasを作成できません");
+  ctx.putImageData(new ImageData(merged,a.width,a.height),0,0);
+  const blob=await new Promise((resolve,reject)=>can.toBlob(x=>x?resolve(x):
+    reject(Error("PNG生成に失敗しました")),"image/png"));
+  const sha=await window.ComicHash.sha256(await blob.arrayBuffer());
+  const safe=$("panelId").value.trim().replace(/[^0-9a-zA-Z_-]/g,"_").slice(0,70)||"panel";
+  const filename="local-composite-"+$("project").value+"-"+safe+".png";
+  compositeRecord={filename,sha256:sha,width:a.width,height:a.height,
+    originSha256:a.sha256,candidateSha256:b.sha256,roi:{...roi},
+    protectedOutsideChangedPixels:check.outside.changed,
+    compositeVerdict:check.verdict,
+    compositeInsideChangedPixels:check.inside.changed,
+    inputCandidateVerdict:comparison.verdict,
+    note:"compositeVerdictは合成PNGの画素検査。result.verdictは元の修正候補の差分検査。Canonの承認ではありません。"};
+  const url=URL.createObjectURL(blob),link=document.createElement("a");
+  link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $("composeStatus").textContent="PNG保存: "+filename+" / SHA-256 "+sha+
+    " / 領域外の変更画素0件。検査レポートJSONに合成結果のハッシュを記録できます。";
+  message("指定範囲だけを合成しました。範囲外の画素はすべて元画像と一致します。作品としての最終承認は別途必要です。","pass");
+ }catch(e){compositeRecord=null;message("合成失敗: "+e.message,"fail")}
+};
+
+function download(text,filename){
+ const url=URL.createObjectURL(new Blob([text],{type:"application/json"}));
+ const a=document.createElement("a");a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("export").onclick=()=>{
+ try{
+  report=createReport();$("details").textContent=JSON.stringify(report,null,2);
+  const safe=$("panelId").value.trim().replace(/[^0-9a-zA-Z_-]/g,"_").slice(0,70);
+  download(JSON.stringify(report,null,2),"image-qa-"+$("project").value+"-"+safe+".json");
+  message("検査レポートJSONを保存しました。画像そのものは含まれません。","pass");
+ }catch(e){message("保存できません: "+e.message,"fail")}
+};
+$("prompt").onclick=()=>{
+ try {
+  const r=createReport();
+  prompt=[
+   "【部分画像修正の指示書／AI生成未接続】",
+   "作品:"+r.project+" コマ:"+r.panelId,
+   "修正元SHA-256:"+r.before.sha256,
+   "修正後SHA-256:"+r.after.sha256,
+   "人物MASTER参照SHA-256:"+(r.master?.sha256||"未登録。正式MASTERを確認"),
+   "ローカル参照台帳照合:"+(r.authorityBinding?.status||"NO_REGISTRY")+" / "+(r.authorityBinding?.characterId||"ID未指定"),
+   "変更を許す領域（画像幅・高さに対する比率）:"+JSON.stringify(r.result.roi),
+   "この領域以外の構図・人物・セリフ・小道具・背景を変えない。",
+   "範囲外画素差分の結果:"+r.result.verdict+" / "+(r.result.outside.fraction*100).toFixed(2)+"%",
+   "人物同一性と画風、セリフ、歴史的整合性は人が正式MASTERと再照合する。",
+   "不合格時は該当領域だけ再修正し、承認済みの他コマは変更しない。",
+   "※画像自体はこの指示書に添付されません。画像生成・編集APIは未接続。"
+  ].join("\n");
+  $("details").textContent=prompt;
+ }catch(e){message("指示書を作成できません: "+e.message,"fail")}
+};
+$("copy").onclick=async()=>{
+ if(!prompt){message("先に指示書を作成してください。","warn");return}
+ try{await navigator.clipboard.writeText(prompt);message("指示書をコピーしました。","pass")}
+ catch{message("コピーできません。表示された指示書を手動でコピーしてください。","warn")}
+};
+$("reset").onclick=()=>{
+ if(!confirm("選択した画像・検査結果をこの画面から消去しますか？"))return;
+ ["master","before","after"].forEach(revoke);roi=null;anchor=null;resetResult();redraw();setStatus();
+};
+["identity","clothing","dialogue","story"].forEach(id=>{
+ $(id).addEventListener("change",()=>{
+  if(comparison){report=null;$("details").textContent="目視確認の記録が変更されました。JSONを保存すると最新の結果を含めます。"}
+ });
+});
+["project","panelId"].forEach(id=>$(id).addEventListener("change",()=>{
+ $("authorityConfirm").checked=false;resetResult();refreshAuthorityStatus();
+}));
+["authorityId","authorityKind"].forEach(id=>$(id).addEventListener("change",()=>{
+ $("authorityConfirm").checked=false;resetResult();refreshAuthorityStatus();
+}));
+$("authorityAdd").onclick=()=>{
+ try{
+  const project=$("project").value;
+  if(!slots.master)throw Error("最初にMASTER画像を選択してください");
+  const detail={kind:$("authorityKind").value,characterId:$("authorityId").value.trim(),
+    label:$("authorityLabel").value.trim(),note:$("authorityNote").value.trim()};
+  const r=registries[project]||A.create(project);
+  const next=A.register(r,project,detail,meta("master"),$("authorityConfirm").checked);
+  registries[project]=next;$("authorityConfirm").checked=false;
+  resetResult();refreshAuthorityStatus();
+ }catch(err){authorityMessage("登録できません: "+err.message,true)}
+};
+$("authorityExport").onclick=()=>{
+ try{
+  const project=$("project").value,r=registries[project];
+  if(!r)throw Error("参照台帳がありません");
+  download(A.safeJson(r),"authority-registry-"+project+".json");
+  authorityMessage("参照台帳のハッシュをJSON保存しました。実画像は含まれません。",false);
+ }catch(err){authorityMessage("保存できません: "+err.message,true)}
+};
+$("authorityImport").addEventListener("change",async e=>{
+ const file=e.target.files?.[0];e.target.value="";
+ if(!file)return;
+ try{
+  if(file.size>256*1024||file.size<1)throw Error("256KB以内のJSONにしてください");
+  const reg=A.normalize(JSON.parse(await file.text())),project=$("project").value;
+  if(reg.project!==project)throw Error("作品が違う参照台帳は取り込めません");
+  if(registries[project]&&!confirm("現在の参照台帳を取り替えますか？必要なら先にJSONを保存してください。"))return;
+  registries[project]=reg;
+  $("authorityConfirm").checked=false;resetResult();refreshAuthorityStatus();
+ }catch(err){authorityMessage("読込失敗: "+err.message,true)}
+});
+window.addEventListener("pagehide",()=>["master","before","after"].forEach(revoke));
+redraw();setStatus();resetResult();
+})();
+</script>
+</body>
+</html>
