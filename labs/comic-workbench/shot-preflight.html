@@ -1,0 +1,88 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>漫画原画プレフライト｜非Canon試験機能</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0e1826;color:#f3f6fb;font-family:system-ui,"Noto Sans JP",sans-serif}header{background:#1d2d43;padding:14px 18px}
+main{margin:auto;max-width:900px;padding:16px;display:grid;gap:16px}section{background:#202e43;border:1px solid #52657b;border-radius:14px;padding:16px}h1{font-size:1.35rem;margin:4px}h2{font-size:1.06rem}
+p{line-height:1.6}a{color:#9fd6ff}button,input,select{font:inherit}button,select{background:#325476;color:#fff;border:1px solid #7491ad;padding:9px;border-radius:8px;min-height:48px}button:disabled{opacity:.5}
+label{display:block;margin:12px 0}input[type=file]{width:100%}input[type=checkbox]{width:23px;height:23px;vertical-align:middle}canvas{width:100%;height:auto;display:block;border:2px solid #5f8eb0;border-radius:9px}
+.small{font-size:.91rem;color:#bfd1e4}.status{white-space:pre-wrap;border-left:4px solid #79b9f4;padding:12px;background:#30435b}
+.warning{border-color:#ffbc7f}fieldset{border:1px solid #627e9b;border-radius:8px}.row{display:flex;flex-wrap:wrap;gap:12px}
+@media(max-width:600px){main{padding:10px}section{padding:12px}button{width:100%}}
+</style></head><body>
+<header><h1>独立原画プレフライト｜v0.13</h1><p class="small">漫画ポスターを1枚の場面原画と取り違えないための画像チェック（非Canon）</p><a href="./index.html">← Comic Workbenchへ</a></header>
+<main>
+<section><h2>① 生成画像を選ぶ</h2><p class="small">この端末だけで画像を検査。外部送信・正式MASTER変更なし。JPEG/PNG/WebP 最大15MB・2000万画素。</p>
+<label>画像ファイル <input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<label>対応する場面ID <select id="shot"><option value="R01">レイナ R01</option><option value="R02">R02</option><option value="R03">R03</option><option value="R04">R04</option><option value="R05">R05</option><option value="R06">R06</option><option value="S01">サネ S01</option><option value="S02">S02</option><option value="S03">S03</option><option value="S04">S04</option><option value="S05">S05</option><option value="S06">S06</option></select></label>
+<p id="state" class="status" role="status">画像を選んでください。</p><canvas id="preview" width="900" height="540" aria-label="選択した原画のプレビュー"></canvas>
+<p class="small">赤い横線は「ポスターの罫線に見える候補位置」です。複数見つかれば要確認。舞台照明や暗い背景で誤検出することもあります。</p>
+</section>
+<section><h2>② 自動チェック結果と目視確認</h2><p id="issues" class="status" role="status">未検査</p>
+<fieldset><legend>原画を見て人が確認（AIによる証明ではありません）</legend>
+<label><input id="oneScene" type="checkbox"> 1場面だけで、複数のコマ／ポスター／絵コンテではない</label>
+<label><input id="sameCharacter" type="checkbox"> 登場人物の顔・髪・服・体型は正式MASTERと照合済み</label>
+<label><input id="correctStory" type="checkbox"> 相手役・証拠・人物の位置が分かり、原稿との因果が自然</label>
+<label><input id="noEmbeddedText" type="checkbox"> 意図しない吹き出し・誤字・生成された日本語を含まない</label>
+</fieldset>
+<p class="small">4項目を確認しても「正式Canon承認」ではありません。自動検査で疑いがある場合は制作を止め、人が原因を確認してください。</p>
+<div class="row"><button id="export" disabled>チェック結果JSONを保存</button></div>
+</section>
+</main>
+<script src="./sha256.js"></script><script src="./shot-preflight.js"></script>
+<script>(function(){"use strict";
+const $=id=>document.getElementById(id),P=window.ComicShotPreflight,H=window.ComicHash;
+let result=null,hash="",filename="";
+const canvas=$("preview"),ctx=canvas.getContext("2d");
+function clearReviews(){for(const id of ["oneScene","sameCharacter","correctStory","noEmbeddedText"])$(id).checked=false}
+function reset(){result=null;hash="";filename="";clearReviews();$("export").disabled=true;$("issues").textContent="未検査"}
+function display(bitmap,report){
+ const sw=report.scanned.width,sh=report.scanned.height;
+ canvas.width=sw;canvas.height=sh;ctx.drawImage(bitmap,0,0,sw,sh);
+ ctx.save();ctx.strokeStyle="#ff616b";ctx.lineWidth=3;
+ for(const bar of report.graphicBands.horizontal){ctx.beginPath();ctx.moveTo(0,bar.center);ctx.lineTo(sw,bar.center);ctx.stroke()}
+ ctx.restore();
+}
+$("imageFile").addEventListener("change",async event=>{
+ const file=event.target.files?.[0];event.target.value="";reset();
+ if(!file)return;
+ try{
+  if(file.size<1||file.size>15*1024*1024||!["image/png","image/jpeg","image/webp"].includes(file.type))throw Error("15MB以内の対応画像を選んでください");
+  const bmp=await createImageBitmap(file);
+  try{
+   if(bmp.width*bmp.height>20000000||bmp.width<1||bmp.height<1)throw Error("画像は2000万画素までです");
+   const scale=Math.min(1,1000/Math.max(bmp.width,bmp.height));
+   const sw=Math.max(24,Math.round(bmp.width*scale)),sh=Math.max(24,Math.round(bmp.height*scale));
+   const tmp=document.createElement("canvas");tmp.width=sw;tmp.height=sh;
+   const cc=tmp.getContext("2d",{willReadFrequently:true});cc.drawImage(bmp,0,0,sw,sh);
+   result=P.inspect(cc.getImageData(0,0,sw,sh).data,sw,sh,bmp.width,bmp.height);
+   display(bmp,result);
+   hash=await H.sha256(await file.arrayBuffer());filename=file.name;
+   $("state").textContent=filename+"／元画像 "+bmp.width+"×"+bmp.height+"／SHA-256 "+hash.slice(0,16)+"…";
+   $("issues").textContent="判定："+result.status+"／問題候補："+result.issues.length+"件\\n"+
+    (result.issues.map(x=>x.code+"： "+x.reason).join("\\n")||"明瞭な暗色のコマ区切りは検出されませんでした。人による目視検査が引き続き必要です。");
+   $("issues").className="status"+(result.issues.length?" warning":"");
+   $("export").disabled=false;
+  }finally{bmp.close?.()}
+ }catch(e){$("state").textContent="画像検査に失敗："+e.message;$("export").disabled=true}
+});
+$("export").onclick=()=>{
+ if(!result||!hash)return;
+ const checks={
+  isStandaloneScene:$("oneScene").checked,
+  identityReviewed:$("sameCharacter").checked,
+  causalityReviewed:$("correctStory").checked,
+  embeddedTextReviewed:$("noEmbeddedText").checked
+ };
+ const ready=result.issues.length===0&&Object.values(checks).every(Boolean);
+ const report={schema:"comic-shot-preflight/v1",shotId:$("shot").value,
+   filename,sha256:hash,originalImage:result.original,preflight:result,
+   humanReview:checks,releaseDisposition:ready?"MANUAL_REVIEW_RECORDED":"BLOCKED",
+   canonApproved:false,videoFinished:false};
+ const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;
+ a.download="shot-preflight-"+report.shotId+".json";document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ $("state").textContent="記録を保存しました。判定："+report.releaseDisposition+"。正式Canonや動画完成の承認にはなりません。";
+};
+ctx.fillStyle="#1b324c";ctx.fillRect(0,0,canvas.width,canvas.height);
+})();</script></body></html>
