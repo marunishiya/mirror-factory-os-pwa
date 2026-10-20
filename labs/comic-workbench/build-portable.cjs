@@ -31,7 +31,7 @@ if(!index.includes("ComicWorkbench")||!image.includes("ComicImageQA")||
  !balloon.includes("ComicBalloonQA"))throw Error("Missing bundled API");
 fs.copyFileSync(path.join(root,"ocr_sidecar.py"),path.join(out,"ocr_sidecar.py"));
 const guide=[
-"Comic Workbench OFFLINE v0.11",
+"Comic Workbench OFFLINE v0.12",
 "",
 "スマホ用：index.html、image-lab.html、balloon-lab.htmlの3つのHTMLをChrome等で開いてください。",
 "吹き出しQA：原稿JSON→コマ画像→吹き出しをタップ→話者・文字を目視で入力→注釈の照合→JSON保存。",
