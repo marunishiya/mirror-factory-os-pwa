@@ -39,7 +39,7 @@ const guide=[
 "実OCR（PC専用・任意）：Tesseract（jpn/jpn_vert）を別途ローカルに導入したPCで、python3 ocr_sidecar.py --image panel.png --output ocr-result.json --lang jpn を実行。生成JSONと同じPNGをballoon-lab.htmlで読み込むとOCR候補を表示。",
 // Tesseract CLI is NOT bundled. Images and Canon remain local; use user-provided data only.
 "手順：画像ラボ →「練習用画像で試す」→「修正前後を比較する」→「指定範囲だけ合成してPNG保存」。",
-"ZIPの中にある3つのHTMLは同じフォルダに置いてください（画面間リンク用）。",
+"ZIPの中にある4つのHTMLは同じフォルダに置いてください（画面間リンク用）。",
 "端末がHTMLファイルをブラウザで開けない場合は、PCのChrome/Edgeで開けます。",
 "作品の画像は端末内のメモリで処理。自動ネット送信・ログイン・APIキー・課金はありません。",
 "画像自体は保存されません。必要な合成PNG／台帳JSON／レポートJSONを各ボタンから保存してください。",
