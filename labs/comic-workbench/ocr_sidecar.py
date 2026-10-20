@@ -81,7 +81,10 @@ def parse_tsv(tsv, width, height, language):
                        "width": round((x2-x1)/width, 6),
                        "height": round((y2-y1)/height, 6)}
         })
-    return result[:MAX_CANDIDATES]
+    if len(result) > MAX_CANDIDATES:
+        # Silent truncation could omit text and lead to a misleading QA result.
+        raise ValueError("OCR候補が80件を超えました。対象のコマを小さく切り出して再実行してください")
+    return result
 
 
 def build_record(image, data, width, height, language, psm, candidates, version):
@@ -104,6 +107,8 @@ def main(argv=None):
     p.add_argument("--output", required=True, help="新規作成する候補JSON")
     p.add_argument("--lang", choices=("jpn", "jpn_vert"), default="jpn")
     p.add_argument("--psm", type=int, choices=(3, 5, 6, 11, 12), default=6)
+    p.add_argument("--timeout",type=int,choices=(10,20,30,50),default=30,
+                   help="ローカルOCR処理の上限秒数（10〜50秒）")
     args = p.parse_args(argv)
     if not shutil.which("tesseract"):
         raise ValueError("Tesseractがインストールされていません")
@@ -128,7 +133,7 @@ def main(argv=None):
     try:
         output = subprocess.run(["tesseract", str(src), "stdout", "-l", args.lang,
                                  "--psm", str(args.psm), "tsv"],
-                                capture_output=True, text=True, timeout=50, check=True).stdout
+                                capture_output=True, text=True, timeout=args.timeout, check=True).stdout
     except subprocess.TimeoutExpired as exc:
         raise ValueError("OCRの処理時間が上限を超えました") from exc
     except subprocess.CalledProcessError as exc:
