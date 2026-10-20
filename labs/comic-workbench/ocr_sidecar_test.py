@@ -57,6 +57,15 @@ class SidecarTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ocr.parse_tsv(HEADER + ROWS, 740, 340, "unknown")
 
+    def test_too_many_text_lines_rejects_instead_of_silently_dropping(self):
+        rows = "".join(
+            "5\\t1\\t1\\t1\\t" + str(n) + "\\t1\\t1\\t" +
+            str(n) + "\\t2\\t1\\t80\\tあ\\n"
+            for n in range(1, 83)
+        ).replace("\\\\t", "\\t").replace("\\\\n", "\\n")
+        with self.assertRaisesRegex(ValueError, "80件"):
+            ocr.parse_tsv(HEADER + rows, 500, 500, "jpn")
+
     def test_tsv_bad_header_is_rejected(self):
         with self.assertRaises(ValueError):
             ocr.parse_tsv("col\nx\n", 740, 340, "jpn")
