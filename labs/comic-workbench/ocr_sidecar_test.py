@@ -59,10 +59,9 @@ class SidecarTests(unittest.TestCase):
 
     def test_too_many_text_lines_rejects_instead_of_silently_dropping(self):
         rows = "".join(
-            "5\\t1\\t1\\t1\\t" + str(n) + "\\t1\\t1\\t" +
-            str(n) + "\\t2\\t1\\t80\\tあ\\n"
+            chr(9).join(["5", "1", "1", "1", str(n), "1", "1", str(n), "2", "1", "80", "あ"]) + chr(10)
             for n in range(1, 83)
-        ).replace("\\\\t", "\\t").replace("\\\\n", "\\n")
+        )
         with self.assertRaisesRegex(ValueError, "80件"):
             ocr.parse_tsv(HEADER + rows, 500, 500, "jpn")
 
