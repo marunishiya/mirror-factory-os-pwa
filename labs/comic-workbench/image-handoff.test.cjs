@@ -71,7 +71,8 @@ test('single panel structure may proceed to review but cannot become approved ar
  assert.equal(r.status,'REVIEW_REQUIRED');
  assert.equal(r.safeToAddAsFinishedArtwork,false);
  assert.equal(r.artApproved,false);
- assert.equal(r.independentQA.status,'FAILED_QA');
+ assert.equal(r.independentQA.status,'REVIEW_REQUIRED');
+ assert(r.independentQA.issues.some(i=>i.code==='PANEL_VISUAL_QA_REQUIRED'));
 });
 test('real output hash and dimensions come from image bytes',()=>{
  const a=args(),r=ingestOfflineCandidate(a);
