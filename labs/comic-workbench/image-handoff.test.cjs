@@ -111,3 +111,51 @@ test('paid provider activation cannot be hidden in postflight',()=>{
  const a=args();a.renderMode='paid';
  assert.equal(ingestOfflineCandidate(a).reason,'NETWORK_GENERATION_DISABLED');
 });
+
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cp=require('node:child_process');
+function makeJobDir(grid){
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mirror-handoff-test-'));
+ const src=path.join(dir,'source.json'),out=path.join(dir,'candidate.png'),
+   mk=path.join(dir,'K.jpg'),mm=path.join(dir,'M.png'),manifest=path.join(dir,'job.json'),
+   report=path.join(dir,'report.json');
+ fs.writeFileSync(src,sourceBytes);fs.writeFileSync(out,png(300,450,grid));
+ fs.writeFileSync(mk,jpegMaster);fs.writeFileSync(mm,pngMaster);
+ fs.writeFileSync(manifest,JSON.stringify({
+  sourceLockFile:src,masterFiles:{K:mk,M:mm},plan,approvedRegistry,
+  panelId:6,prompt:'第六コマ、最後のセリフ',expectedOutput:'single_panel'
+ }));
+ return {dir,src,out,manifest,report};
+}
+test('one CLI command quarantines 6-panel output and records unchanged file hash',()=>{
+ const x=makeJobDir(true);
+ try{
+  const before=digest(fs.readFileSync(x.out));
+  const r=cp.spawnSync(process.execPath,[path.join(__dirname,'image-handoff-cli.cjs'),
+    x.manifest,x.out,x.report],{encoding:'utf8',timeout:15000});
+  assert.equal(r.status,2,(r.stderr||'')+' '+(r.stdout||''));
+  assert.equal(JSON.parse(fs.readFileSync(x.report,'utf8')).status,'QUARANTINED');
+  assert.equal(digest(fs.readFileSync(x.out)),before);
+ }finally{fs.rmSync(x.dir,{recursive:true,force:true});}
+});
+test('CLI allows review-only result for one panel but does not approve it',()=>{
+ const x=makeJobDir(false);
+ try{
+  const r=cp.spawnSync(process.execPath,[path.join(__dirname,'image-handoff-cli.cjs'),
+    x.manifest,x.out,x.report],{encoding:'utf8',timeout:15000});
+  assert.equal(r.status,0,(r.stderr||'')+' '+(r.stdout||''));
+  const result=JSON.parse(fs.readFileSync(x.report,'utf8'));
+  assert.equal(result.status,'REVIEW_REQUIRED');
+  assert.equal(result.artApproved,false);
+  assert.equal(result.safeToAddAsFinishedArtwork,false);
+ }finally{fs.rmSync(x.dir,{recursive:true,force:true});}
+});
+test('CLI never replaces an existing report',()=>{
+ const x=makeJobDir(false);
+ try{
+  fs.writeFileSync(x.report,'protected');
+  const r=cp.spawnSync(process.execPath,[path.join(__dirname,'image-handoff-cli.cjs'),
+    x.manifest,x.out,x.report],{encoding:'utf8',timeout:15000});
+  assert.equal(r.status,2);
+  assert.equal(fs.readFileSync(x.report,'utf8'),'protected');
+ }finally{fs.rmSync(x.dir,{recursive:true,force:true});}
+});
