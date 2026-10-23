@@ -40,8 +40,13 @@ function verifyMasterFiles(characterIds,masters,registry){
       entry.sha256!==actual){
    issues.push({code:'MASTER_AUTHORITY_UNVERIFIED',characterId:id});continue;
   }
-  try {inspectPng(bytes);} catch(e){
-   issues.push({code:'MASTER_NOT_SUPPORTED_PNG',characterId:id});continue;
+  // User-approved masters include JPEG (Kenta) and PNG (Mina).
+  const jpeg=bytes[0]===255&&bytes[1]===216&&bytes[2]===255&&
+    bytes[bytes.length-2]===255&&bytes[bytes.length-1]===217;
+  let png=false;
+  try {inspectPng(bytes);png=true;} catch{}
+  if(!jpeg&&!png){
+   issues.push({code:'MASTER_IMAGE_FORMAT_UNSUPPORTED',characterId:id});continue;
   }
   result.push({characterId:id,sha256:actual,fileAccessible:true,
    hashMatched:true,suppliedToGenerator:true});
