@@ -66,9 +66,14 @@ function ingestOfflineCandidate(args={}){
    renderProvenance:'external-candidate-unverified'
  };
  const history=Array.isArray(preflightInputs.history)?preflightInputs.history:[];
- const independentQA=assessResult({
-    sourceLockSha256:pre.lockSha256,history,candidate,verifiedQA:null
- });
+ // The 2048x3072 threshold belongs to an assembled PAGE, not a single panel.
+ // A panel remains review-only until face/dialogue/bubbles and target detail are checked.
+ const independentQA=expectedOutput==='page'?
+    assessResult({sourceLockSha256:pre.lockSha256,history,candidate,verifiedQA:null}):
+    {status:'REVIEW_REQUIRED',issues:[
+      {code:'PANEL_VISUAL_QA_REQUIRED',
+       reason:'顔・セリフ・吹き出し尻尾・ネイティブ画質の実画像QAを実施'}
+    ]};
  const wholePageQA=expectedOutput==='page'?
    validateCandidate({lock,candidate,review:null}):null;
  const quarantine=layout.status==='BLOCKED';
