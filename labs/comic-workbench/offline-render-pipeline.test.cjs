@@ -2,7 +2,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {runMockPanel,verifyMasterFiles,inspectPng,digest}=require('./offline-render-pipeline.cjs');
-const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/3h8AAAAASUVORK5CYII=','base64');
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
 const jpg=Buffer.concat([Buffer.from([255,216,255]),Buffer.alloc(40,22),Buffer.from([255,217])]);
 const panels=[
  {panel:1,position:'右上',lines:[{speaker:'M',text:'こんにちは'}]},
