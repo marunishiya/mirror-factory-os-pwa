@@ -10,5 +10,5 @@ test('single-panel output gate Python tests run in existing offline CI',()=>{
  });
  assert.equal(r.error,undefined,String(r.error||''));
  assert.equal(r.status,0,(r.stdout||'')+'\n'+(r.stderr||''));
- assert.match(r.stderr,/Ran 7 tests/);
+ assert.match(r.stderr,/Ran 13 tests/);
 });
