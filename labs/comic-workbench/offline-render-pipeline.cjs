@@ -11,7 +11,7 @@ const SHA=/^[0-9a-f]{64}$/i;
 const digest=buf=>crypto.createHash('sha256').update(buf).digest('hex');
 const maxSource=1024*1024, maxMaster=16*1024*1024, maxImage=24*1024*1024;
 const mockPng=Buffer.from(
- 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/3h8AAAAASUVORK5CYII=','base64'
+ 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64'
 );
 function inspectPng(bytes){
  if(!Buffer.isBuffer(bytes)||bytes.length<33||bytes.length>maxImage)
