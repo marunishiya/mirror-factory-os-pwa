@@ -1,4 +1,5 @@
 'use strict';
+const {assessRetry}=require('./retry-controller.cjs');
 // Experimental fail-closed evidence gate. No generator calls, OCR, or face detection.
 const HEX=/^[a-f0-9]{64}$/i;
 const hash=x=>typeof x==='string'&&HEX.test(x);
@@ -47,6 +48,15 @@ function validatePlan({intent,plan,lock}={}){
       add(issues,'RETRY_WITHOUT_DIAGNOSIS','原因と変更点がない再生成を禁止');
     if(plan.referenceStrategy==='failed-image-only')
       add(issues,'FAILED_IMAGE_AS_AUTHORITY','不合格画像を唯一の参照にしない');
+  }
+  if(plan?.previousFailedCandidate){
+    const retry=assessRetry({
+      ...(plan?.retryEvidence||{}),
+      intent,pageId:lock?.pageId,sourceLockSha256:lock?.sha256
+    });
+    for(const item of retry.issues){
+      add(issues,'RETRY_'+item.code,item.reason);
+    }
   }
   return verdict('PRE_GENERATION',issues);
 }
