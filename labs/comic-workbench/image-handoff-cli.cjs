@@ -23,6 +23,15 @@ function main(argv){
    if(!Object.hasOwn(job.masterFiles,id))throw Error('MASTER_PATH_MISSING');
    masterBytes[id]=fs.readFileSync(path.resolve(job.masterFiles[id]));
  }
+ // Abort BEFORE any potentially misleading success-like output.
+ if(outPath){
+   if(outPath===imagePath||outPath===jobPath||
+      outPath===path.resolve(job.sourceLockFile)||
+      (job.plan.requiredCharacterIds||[]).some(id=>
+        outPath===path.resolve(job.masterFiles[id])))
+     throw Error('REFUSE_TO_OVERWRITE_INPUT');
+   if(fs.existsSync(outPath))throw Error('REFUSE_TO_OVERWRITE_EXISTING_REPORT');
+ }
  const imageBytes=fs.readFileSync(imagePath);
  const result=ingestOfflineCandidate({
    intent:'generate',sourceBytes,plan:job.plan,panelId:job.panelId,
@@ -33,10 +42,6 @@ function main(argv){
  const text=JSON.stringify(result,null,2)+'\n';
  process.stdout.write(text);
  if(outPath){
-   if(outPath===imagePath||outPath===jobPath||
-      outPath===path.resolve(job.sourceLockFile))
-     throw Error('REFUSE_TO_OVERWRITE_INPUT');
-   if(fs.existsSync(outPath))throw Error('REFUSE_TO_OVERWRITE_EXISTING_REPORT');
    fs.writeFileSync(outPath,text,{flag:'wx',mode:0o600});
  }
  return result.status==='QUARANTINED'?2:0;
