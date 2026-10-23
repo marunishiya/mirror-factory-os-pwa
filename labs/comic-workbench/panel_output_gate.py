@@ -94,30 +94,44 @@ def analyze_output(path,expected='single_panel'):
     try:
         w,h,c,data,sha=read_png_rgb(path)
         report.update({'width':w,'height':h,'sha256':sha})
-        row_candidates=[]
-        xs=range(max(2,int(.02*w)),int(.98*w),max(1,w//256))
-        for y in range(int(.12*h),int(.88*h)):
-            bright=0;total=0
-            for x in xs:
-                i=(y*w+x)*c
-                bright+=(data[i]>210 and data[i+1]>210 and data[i+2]>210)
-                total+=1
-            if bright/max(1,total)>.82:
-                row_candidates.append(y)
-        separator_bands=[(a,b) for a,b in group_runs(row_candidates) if b-a>=2]
-        x=w//2;bright=0;total=0
-        for y in range(int(.08*h),int(.97*h),max(1,h//512)):
+        # Conservative detection of both light/white and dark/black panel gutters.
+        # Detects obvious 2x3 pages, not visual correctness or all possible layouts.
+        xs=list(range(max(2,int(.06*w)),int(.94*w),max(1,w//160)))
+        def line_colour(x,y):
             i=(y*w+x)*c
-            bright+=int(data[i]>210 and data[i+1]>210 and data[i+2]>210)
-            total+=1
-        central_brightness=bright/max(1,total)
-        two_rows=(len(separator_bands)>=2 and
-            any(abs(b[0]-a[0])>.15*h for i,a in enumerate(separator_bands)
-                for b in separator_bands[i+1:]))
-        page_grid=two_rows and central_brightness>.72
-        report.update({'horizontal_separator_bands':separator_bands[:8],
-            'central_gutter_white_ratio':round(central_brightness,3),
-            'two_by_three_grid_detected':page_grid})
+            return data[i],data[i+1],data[i+2]
+        def flat_fraction(colors):
+            if not colors: return 0.0,'unknown'
+            white=sum(min(v)>222 and max(v)-min(v)<50 for v in colors)/len(colors)
+            black=sum(max(v)<65 for v in colors)/len(colors)
+            return (white,'light') if white>=black else (black,'dark')
+        row_candidates=[]
+        for y in range(int(.15*h),int(.85*h)):
+            fraction,tone=flat_fraction([line_colour(x,y) for x in xs])
+            if fraction>.94:
+                row_candidates.append((y,tone))
+        separator_bands=[]
+        for tone in ('light','dark'):
+            separator_bands.extend((a,b,tone) for a,b in
+                group_runs([y for y,t in row_candidates if t==tone]) if b-a>=1)
+        separator_bands.sort(key=lambda x:x[0])
+        col_scores=[]
+        ys=list(range(int(.12*h),int(.92*h),max(1,h//240)))
+        for x in range(int(.48*w),int(.52*w)+1,max(1,w//300)):
+            fraction,tone=flat_fraction([line_colour(x,y) for y in ys])
+            col_scores.append((fraction,tone,x))
+        best=max(col_scores,default=(0,'unknown',w//2))
+        upper=[v for v in separator_bands if .20*h<=v[0]<=.46*h]
+        lower=[v for v in separator_bands if .54*h<=v[0]<=.80*h]
+        pairs=[(u,l) for u in upper for l in lower if l[0]-u[0]>.18*h]
+        page_grid=bool(pairs) and best[0]>.78
+        report.update({'horizontal_separator_bands':separator_bands[:14],
+            'central_gutter_flat_ratio':round(best[0],3),
+            'central_gutter_tone':best[1],
+            'central_gutter_column':best[2],
+            'two_by_three_grid_detected':page_grid,
+            'structureConfidence':'high_for_2x3_only' if page_grid else 'unknown',
+            'limitation':'Not OCR, character identity, native detail, or page quality'})
         if expected=='single_panel' and page_grid:
             report.update(status='BLOCKED',reason='PAGE_GRID_INSTEAD_OF_SINGLE_PANEL')
         elif expected=='single_panel' and not page_grid:
