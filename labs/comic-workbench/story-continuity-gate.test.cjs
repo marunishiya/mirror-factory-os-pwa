@@ -67,6 +67,7 @@ test('unexplained arrival blocks; documented arrival passes',()=>{
  const b=fixture();b.pages[0].panels[1].location='BACKSTAGE';
  assert.ok(codes(b).includes('UNEXPLAINED_ARRIVAL'));
  b.pages[0].panels[1].arrivals={KENTA:{from:'EXHIBIT',reason:'見学後に会場を歩く'}};
+ b.pages[0].panels[2].arrivals={KENTA:{from:'BACKSTAGE',reason:'古地図展示に戻る'}};
  assert.equal(codes(b).includes('UNEXPLAINED_ARRIVAL'),false);
 });
 test('leash color changes are rejected',()=>{
