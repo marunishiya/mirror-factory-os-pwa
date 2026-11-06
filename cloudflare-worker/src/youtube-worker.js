@@ -1,6 +1,7 @@
 import { Fault, MAX_BYTES, validateJob, requireFuture, digest, random, seal, unseal,
   token, checkChannel, startUpload, sessionURL, acknowledgedOffset, verifyVideo } from './youtube-api.js';
 import { page } from './youtube-ui.js';
+import { stageMedia, readStagedMedia } from './media-stage.js';
 
 const nowISO = () => new Date().toISOString();
 function json(data, status = 200, extra = {}) {
@@ -90,7 +91,7 @@ async function markReview(env, id, code) {
   await env.DB.prepare("UPDATE mse_youtube_jobs SET status='needs_review',last_error=?,updated_at=? WHERE id=?")
     .bind(code, nowISO(), id).run();
 }
-async function uploadOperation(request, env, id, probeOnly, http) {
+async function uploadOperation(request, env, id, probeOnly, http, stagedBytes) {
   if (env.LIVE_PUBLISHING_ENABLED !== 'true') throw new Fault('live_publishing_disabled', 503);
   let row = await getJob(env.DB, id); if (!row) throw new Fault('job_not_found', 404);
   if (row.status === 'youtube_scheduled') return summary(row);
@@ -98,7 +99,7 @@ async function uploadOperation(request, env, id, probeOnly, http) {
   // Validate media BEFORE claiming or calling any external endpoint.
   let bytes;
   if (!probeOnly) {
-    bytes = await boundedBody(request, MAX_BYTES);
+    bytes = stagedBytes ?? await boundedBody(request, MAX_BYTES);
     if (bytes.byteLength !== job.size || await digest(bytes) !== job.sha256) throw new Fault('video_does_not_match_approved_file');
     requireFuture(job.publishAt);
   }
@@ -206,6 +207,22 @@ export async function handle(request, env, http = fetch) {
     return json({ jobs: (r.results || []).map(summary) });
   }
   if (request.method === 'POST' && path === '/api/jobs') return json(await createJob(env, await bodyJSON(request)), 201);
+  const stageMatch = /^\/api\/jobs\/([a-f0-9-]{36})\/(stage|upload-staged)$/.exec(path);
+  if (request.method === 'POST' && stageMatch) {
+    const row = await getJob(env.DB, stageMatch[1]);
+    if (!row) throw new Fault('job_not_found', 404);
+    const job = JSON.parse(row.payload);
+    if (stageMatch[2] === 'stage') {
+      if (row.status !== 'draft' || row.video_id) throw new Fault('stage_requires_draft_job', 409);
+      const body = await bodyJSON(request);
+      return json(await stageMedia(env, job, body.sourceUrl, http), 201);
+    }
+    // Explicit opt-in still governs real YouTube insertion, even for staged media.
+    if (env.LIVE_PUBLISHING_ENABLED !== 'true') throw new Fault('live_publishing_disabled', 503);
+    requireFuture(job.publishAt);
+    const stagedBytes = await readStagedMedia(env, job);
+    return json(await uploadOperation(request, env, stageMatch[1], false, http, stagedBytes));
+  }
   const match = /^\/api\/jobs\/([a-f0-9-]{36})\/(upload|probe)$/.exec(path);
   if (request.method === 'POST' && match) return json(await uploadOperation(request, env, match[1], match[2] === 'probe', http));
   throw new Fault('not_found', 404);

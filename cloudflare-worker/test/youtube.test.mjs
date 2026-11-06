@@ -156,3 +156,59 @@ test('status page has CSP and never embeds credentials',async()=>{
   // Syntax-check the exact emitted browser script without executing any DOM or network actions.
   const source=html.match(/<script nonce="[^"]+">([\s\S]*?)<\/script>/)[1];new Function(source);
 });
+
+
+test('approved source is staged privately, duplicates are avoided, live gate still blocks upload', async () => {
+  const e = env(), objects = new Map();
+  e.MEDIA_SOURCE_HOSTS = 'assets.example.com';
+  e.MEDIA_BUCKET = {
+    async head(key) { const b = objects.get(key); return b ? { size: b.byteLength } : null; },
+    async get(key) { const b = objects.get(key); return b ? { size: b.byteLength,
+      arrayBuffer: async () => b.slice(0) } : null; },
+    async put(key, bytes) { objects.set(key, bytes.slice(0)); return { key }; }
+  };
+  const saved = await create(e), google = upstream();
+  let sourceReads = 0;
+  const url = 'https://assets.example.com/approved/fixture.mp4';
+  const http = async (requestURL, init = {}) => {
+    if (requestURL === url) {
+      sourceReads++;
+      assert.equal(init.redirect, 'manual');
+      return new Response(media, { headers: { 'content-type': 'video/mp4' } });
+    }
+    assert.notEqual(init.redirect, 'error'); // Cloudflare Workers does not support this mode.
+    return google.http(requestURL, init);
+  };
+  const stage = () => handle(req('/api/jobs/' + saved.id + '/stage', e, 'POST', { sourceUrl: url }), e, http);
+  const first = await stage(), firstJSON = await first.json();
+  assert.equal(first.status, 201);
+  assert.equal(firstJSON.staged, true);
+  assert.equal(firstJSON.alreadyStaged, false);
+  const second = await stage();
+  assert.equal((await second.json()).alreadyStaged, true);
+  assert.equal(sourceReads, 1);
+  assert.equal(objects.size, 1);
+  e.LIVE_PUBLISHING_ENABLED = 'false';
+  await assert.rejects(() => handle(req('/api/jobs/' + saved.id + '/upload-staged', e, 'POST'), e, http),
+    /live_publishing_disabled/);
+  assert.equal(google.stats.starts, 0);
+  e.LIVE_PUBLISHING_ENABLED = 'true';
+  await connected(e);
+  const uploaded = await (await handle(req('/api/jobs/' + saved.id + '/upload-staged', e, 'POST'), e, http)).json();
+  assert.equal(uploaded.status, 'youtube_scheduled');
+  assert.equal(uploaded.videoId, videoId);
+  assert.equal(google.stats.puts, 1);
+  assert.deepEqual(google.stats.sent, media);
+});
+
+test('stage endpoint rejects unknown jobs and unapproved media sources', async () => {
+  const e = env(), google = upstream();
+  e.MEDIA_BUCKET = { head: async () => null };
+  e.MEDIA_SOURCE_HOSTS = 'assets.example.com';
+  const j = await create(e);
+  await assert.rejects(() => handle(req('/api/jobs/' + j.id + '/stage', e, 'POST',
+    { sourceUrl: 'https://unexpected.example/clip.mp4' }), e, google.http), /media_source_not_allowed/);
+  assert.equal(google.stats.starts, 0);
+  await assert.rejects(() => handle(req('/api/jobs/' + crypto.randomUUID() + '/stage', e, 'POST',
+    { sourceUrl: 'https://assets.example.com/clip.mp4' }), e, google.http), /job_not_found/);
+});

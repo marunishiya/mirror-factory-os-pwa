@@ -59,7 +59,7 @@ export function sessionURL(value) {
   return u.href;
 }
 export async function token(env, fields, http = fetch) {
-  const r = await http('https://oauth2.googleapis.com/token', { method: 'POST', redirect: 'error',
+  const r = await http('https://oauth2.googleapis.com/token', { method: 'POST', redirect: 'manual',
     signal: AbortSignal.timeout(20000), headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, ...fields }) });
   if (!r.ok) throw new Fault('google_authorization_failed_reconnect_required', 502);
@@ -68,7 +68,7 @@ export async function token(env, fields, http = fetch) {
   return data;
 }
 export async function googleJSON(url, access, init = {}, http = fetch) {
-  const r = await http(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(20000),
+  const r = await http(url, { ...init, redirect: 'manual', signal: AbortSignal.timeout(20000),
     headers: { 'authorization': 'Bearer ' + access, 'content-type': 'application/json', ...init.headers } });
   if (!r.ok) throw new Fault('youtube_api_error_' + r.status, 502);
   return r.json();
@@ -80,7 +80,7 @@ export async function checkChannel(access, expected, http = fetch) {
 export async function startUpload(job, access, http = fetch) {
   requireFuture(job.publishAt);
   const r = await http('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status&notifySubscribers=false', {
-    method: 'POST', redirect: 'error', signal: AbortSignal.timeout(20000), headers: {
+    method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(20000), headers: {
       authorization: 'Bearer ' + access, 'content-type': 'application/json',
       'x-upload-content-length': String(job.size), 'x-upload-content-type': job.mime },
     body: JSON.stringify({ snippet: { title: job.title, description: job.description, categoryId: '1' }, status: {
